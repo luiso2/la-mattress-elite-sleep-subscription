@@ -152,10 +152,10 @@ export default function DashboardPage() {
               <div className="text-center py-8">
                 <p className="text-gray-600 mb-6">No active subscription</p>
                 <button
-                  onClick={() => router.push('/register')}
+                  onClick={() => router.push('/portal')}
                   className="la-button-primary"
                 >
-                  Get Started
+                  Access Portal
                 </button>
               </div>
             )}

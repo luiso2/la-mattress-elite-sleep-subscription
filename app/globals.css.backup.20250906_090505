@@ -15,19 +15,15 @@
   --foreground: var(--la-text-primary);
 }
 
-/* Modern CSS Reset - Más suave y respeta los defaults útiles */
-*, *::before, *::after {
-  box-sizing: border-box;
-}
-
 * {
   margin: 0;
+  padding: 0;
+  box-sizing: border-box;
 }
 
 html {
   font-size: 16px;
   scroll-behavior: smooth;
-  -webkit-text-size-adjust: 100%;
 }
 
 body {
@@ -40,23 +36,12 @@ body {
   min-height: 100vh;
 }
 
-/* Preservar padding en elementos de formulario */
-input, button, textarea, select {
-  font: inherit;
-}
-
-/* Preservar padding en elementos de lista cuando sea necesario */
-ul[role="list"], ol[role="list"] {
-  list-style: none;
-  padding: 0;
-}
-
-/* Typography con mejor espaciado */
+/* Typography Reset and Base Styles */
 h1, h2, h3, h4, h5, h6 {
   font-weight: 700;
   line-height: 1.2;
   color: var(--la-dark-blue);
-  margin-bottom: 0.5em;
+  margin: 0;
 }
 
 h1 {
@@ -78,11 +63,7 @@ p {
   line-height: 1.6;
   font-size: 1rem; /* 16px */
   color: var(--la-text-secondary);
-  margin-bottom: 1em;
-}
-
-p:last-child {
-  margin-bottom: 0;
+  margin: 0;
 }
 
 /* Desktop Typography */
@@ -104,34 +85,22 @@ p:last-child {
   }
 }
 
-/* Links con mejor accesibilidad */
+/* Links */
 a {
   color: inherit;
   text-decoration: none;
   transition: color 0.2s ease;
 }
 
-a:hover {
-  text-decoration: underline;
-}
-
-/* Button Base Styles con padding adecuado */
+/* Button Base Styles */
 button {
   font-family: inherit;
   cursor: pointer;
   border: none;
   outline: none;
-  padding: 0.5rem 1rem;
-  transition: all 0.2s ease;
 }
 
-/* Focus styles para accesibilidad */
-:focus-visible {
-  outline: 2px solid var(--la-light-blue);
-  outline-offset: 2px;
-}
-
-/* Utility Classes mejoradas */
+/* Utility Classes */
 .la-button-primary {
   background-color: var(--la-yellow);
   color: var(--la-dark-blue);
@@ -153,7 +122,6 @@ button {
   transform: translateY(-2px);
   box-shadow: 0 4px 12px rgba(255, 215, 0, 0.4);
   background-color: #ffed4a;
-  text-decoration: none;
 }
 
 .la-button-secondary {
@@ -177,16 +145,13 @@ button {
   background-color: #1e3a8a;
   transform: translateY(-1px);
   box-shadow: 0 4px 8px rgba(30, 64, 175, 0.3);
-  text-decoration: none;
 }
 
-/* Container Responsive con padding vertical */
+/* Container Responsive */
 .container-mobile {
   width: 100%;
   padding-left: 1rem;
   padding-right: 1rem;
-  padding-top: 1.5rem;
-  padding-bottom: 1.5rem;
   margin-left: auto;
   margin-right: auto;
 }
@@ -202,8 +167,6 @@ button {
   .container-mobile {
     padding-left: 2rem;
     padding-right: 2rem;
-    padding-top: 2rem;
-    padding-bottom: 2rem;
   }
 }
 
@@ -213,7 +176,7 @@ button {
   }
 }
 
-/* Card Styles mejorados */
+/* Card Styles */
 .card {
   background: white;
   border-radius: 1rem;
@@ -225,7 +188,6 @@ button {
 
 .card:hover {
   box-shadow: 0 15px 35px rgba(0, 0, 0, 0.12);
-  transform: translateY(-2px);
 }
 
 @media (min-width: 768px) {
@@ -234,7 +196,7 @@ button {
   }
 }
 
-/* Form Styles mejorados */
+/* Form Styles */
 input[type="text"],
 input[type="email"],
 input[type="password"],
@@ -321,12 +283,10 @@ textarea:focus {
 /* Custom Scrollbar */
 ::-webkit-scrollbar {
   width: 8px;
-  height: 8px;
 }
 
 ::-webkit-scrollbar-track {
   background: #f1f1f1;
-  border-radius: 4px;
 }
 
 ::-webkit-scrollbar-thumb {
@@ -342,7 +302,6 @@ textarea:focus {
 img {
   max-width: 100%;
   height: auto;
-  display: block;
 }
 
 /* Selection */
@@ -354,37 +313,4 @@ img {
 ::-moz-selection {
   background-color: var(--la-light-blue);
   color: white;
-}
-
-/* Espaciado de secciones */
-section {
-  padding-top: 3rem;
-  padding-bottom: 3rem;
-}
-
-@media (min-width: 768px) {
-  section {
-    padding-top: 5rem;
-    padding-bottom: 5rem;
-  }
-}
-
-/* Mejoras específicas para navegación */
-nav ul {
-  list-style: none;
-  padding: 0;
-  margin: 0;
-}
-
-nav a {
-  display: inline-block;
-  padding: 0.5rem 1rem;
-}
-
-/* Fix para elementos del menú móvil */
-.mobile-menu-item {
-  display: block;
-  width: 100%;
-  padding: 0.75rem 1rem;
-  text-align: left;
 }
