@@ -2,9 +2,19 @@ import { NextRequest, NextResponse } from 'next/server';
 import Stripe from 'stripe';
 import jwt from 'jsonwebtoken';
 
-const stripe = new Stripe(process.env.STRIPE_SECRET_KEY as string, {
-  apiVersion: '2024-12-18.acacia',
-});
+let stripe: Stripe | null = null;
+
+function getStripe(): Stripe {
+  if (!stripe) {
+    if (!process.env.STRIPE_SECRET_KEY) {
+      throw new Error('Stripe secret key is not configured');
+    }
+    stripe = new Stripe(process.env.STRIPE_SECRET_KEY, {
+      apiVersion: '2024-12-18.acacia',
+    });
+  }
+  return stripe;
+}
 
 export async function POST(request: NextRequest) {
   try {
@@ -18,7 +28,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Search for customer in Stripe
-    const customers = await stripe.customers.search({
+    const customers = await getStripe().customers.search({
       query: `email:"${email}"`,
     });
 
@@ -32,7 +42,7 @@ export async function POST(request: NextRequest) {
     const customer = customers.data[0];
 
     // Check if customer has an active subscription
-    const subscriptions = await stripe.subscriptions.list({
+    const subscriptions = await getStripe().subscriptions.list({
       customer: customer.id,
       status: 'active',
     });
