@@ -4,13 +4,13 @@ export const config = {
     url: process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000',
   },
   stripe: {
-    secretKey: process.env.STRIPE_SECRET_KEY!,
-    webhookSecret: process.env.STRIPE_WEBHOOK_SECRET!,
-    publishableKey: process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY!,
+    secretKey: process.env.STRIPE_SECRET_KEY || '',
+    webhookSecret: process.env.STRIPE_WEBHOOK_SECRET || '',
+    publishableKey: process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY || '',
     prices: {
-      basic: process.env.STRIPE_PRICE_ID_BASIC!,
-      premium: process.env.STRIPE_PRICE_ID_PREMIUM!,
-      enterprise: process.env.STRIPE_PRICE_ID_ENTERPRISE!,
+      basic: process.env.STRIPE_PRICE_ID_BASIC || '',
+      premium: process.env.STRIPE_PRICE_ID_PREMIUM || '',
+      enterprise: process.env.STRIPE_PRICE_ID_ENTERPRISE || '',
     },
   },
   jwt: {

@@ -2,17 +2,26 @@ import Stripe from 'stripe';
 import { config } from '../config';
 
 class StripeService {
-  private stripe: Stripe;
+  private stripe: Stripe | null = null;
 
-  constructor() {
-    this.stripe = new Stripe(config.stripe.secretKey, {
-      apiVersion: '2025-08-27.basil',
-    });
+  private getStripe(): Stripe {
+    // Lazy initialization - only create Stripe instance when needed
+    if (!this.stripe) {
+      // Check if we have the required key
+      if (!config.stripe.secretKey) {
+        throw new Error('Stripe secret key is not configured');
+      }
+      
+      this.stripe = new Stripe(config.stripe.secretKey, {
+        apiVersion: '2025-08-27.basil',
+      });
+    }
+    return this.stripe;
   }
 
   async createCustomer(email: string, name?: string) {
     try {
-      const customer = await this.stripe.customers.create({
+      const customer = await this.getStripe().customers.create({
         email,
         name,
       });
@@ -52,7 +61,7 @@ class StripeService {
         sessionData.customer_email = customerEmail;
       }
 
-      const session = await this.stripe.checkout.sessions.create(sessionData);
+      const session = await this.getStripe().checkout.sessions.create(sessionData);
       return session;
     } catch (error) {
       console.error('Error creating checkout session:', error);
@@ -62,7 +71,7 @@ class StripeService {
 
   async createBillingPortalSession(customerId: string, returnUrl?: string) {
     try {
-      const session = await this.stripe.billingPortal.sessions.create({
+      const session = await this.getStripe().billingPortal.sessions.create({
         customer: customerId,
         return_url: returnUrl || config.app.url,
       });
@@ -75,7 +84,7 @@ class StripeService {
 
   async getSubscription(subscriptionId: string) {
     try {
-      const subscription = await this.stripe.subscriptions.retrieve(subscriptionId);
+      const subscription = await this.getStripe().subscriptions.retrieve(subscriptionId);
       return subscription;
     } catch (error) {
       console.error('Error retrieving subscription:', error);
@@ -85,7 +94,7 @@ class StripeService {
 
   async cancelSubscription(subscriptionId: string) {
     try {
-      const subscription = await this.stripe.subscriptions.cancel(subscriptionId);
+      const subscription = await this.getStripe().subscriptions.cancel(subscriptionId);
       return subscription;
     } catch (error) {
       console.error('Error canceling subscription:', error);
@@ -95,9 +104,9 @@ class StripeService {
 
   async updateSubscription(subscriptionId: string, priceId: string) {
     try {
-      const subscription = await this.stripe.subscriptions.retrieve(subscriptionId);
+      const subscription = await this.getStripe().subscriptions.retrieve(subscriptionId);
       
-      const updatedSubscription = await this.stripe.subscriptions.update(subscriptionId, {
+      const updatedSubscription = await this.getStripe().subscriptions.update(subscriptionId, {
         items: [
           {
             id: subscription.items.data[0].id,
@@ -116,7 +125,7 @@ class StripeService {
 
   async getCustomerSubscriptions(customerId: string) {
     try {
-      const subscriptions = await this.stripe.subscriptions.list({
+      const subscriptions = await this.getStripe().subscriptions.list({
         customer: customerId,
         status: 'active',
       });
@@ -129,7 +138,7 @@ class StripeService {
 
   async constructWebhookEvent(payload: Buffer | string, signature: string) {
     try {
-      const event = this.stripe.webhooks.constructEvent(
+      const event = this.getStripe().webhooks.constructEvent(
         payload,
         signature,
         config.stripe.webhookSecret
@@ -143,7 +152,7 @@ class StripeService {
 
   async getCheckoutSession(sessionId: string) {
     try {
-      const session = await this.stripe.checkout.sessions.retrieve(sessionId);
+      const session = await this.getStripe().checkout.sessions.retrieve(sessionId);
       return session;
     } catch (error) {
       console.error('Error retrieving checkout session:', error);
@@ -153,7 +162,7 @@ class StripeService {
 
   async getCustomer(customerId: string) {
     try {
-      const customer = await this.stripe.customers.retrieve(customerId) as Stripe.Customer;
+      const customer = await this.getStripe().customers.retrieve(customerId) as Stripe.Customer;
       return customer;
     } catch (error) {
       console.error('Error retrieving customer:', error);
