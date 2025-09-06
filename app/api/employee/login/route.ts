@@ -4,7 +4,7 @@ import jwt from 'jsonwebtoken';
 // Get employees from environment variables
 function getEmployees() {
   const employees = [];
-  for (let i = 1; i <= 5; i++) {
+  for (let i = 1; i <= 9; i++) {
     const email = process.env[`EMPLOYEE_${i}_EMAIL`];
     const password = process.env[`EMPLOYEE_${i}_PASSWORD`];
     const name = process.env[`EMPLOYEE_${i}_NAME`];
