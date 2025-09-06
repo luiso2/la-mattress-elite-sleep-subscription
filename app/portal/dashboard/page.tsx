@@ -201,8 +201,16 @@ export default function PortalDashboard() {
                 <span className="text-gray-600">Monthly credit:</span>
                 <span className="font-semibold">${data.credits.monthly}</span>
               </div>
+              <div className="flex justify-between py-2 border-b border-gray-100">
+                <span className="text-gray-600">Total earned:</span>
+                <span className="font-semibold">${data.credits.total || 0}</span>
+              </div>
+              <div className="flex justify-between py-2 border-b border-gray-100">
+                <span className="text-gray-600">Credits used:</span>
+                <span className="font-semibold text-red-600">-${data.credits.used || 0}</span>
+              </div>
               <div className="flex justify-between py-2">
-                <span className="text-gray-600">Total available:</span>
+                <span className="text-gray-600">Available balance:</span>
                 <span className="font-bold text-green-600">${data.credits.available}</span>
               </div>
             </div>

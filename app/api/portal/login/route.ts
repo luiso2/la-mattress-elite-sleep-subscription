@@ -7,7 +7,7 @@ let stripe: Stripe | null = null;
 function getStripe(): Stripe | null {
   if (!stripe) {
     if (!process.env.STRIPE_SECRET_KEY || process.env.STRIPE_SECRET_KEY.includes('placeholder')) {
-      console.warn('Stripe is not properly configured - using demo mode');
+      console.warn('Stripe is not properly configured');
       return null;
     }
     stripe = new Stripe(process.env.STRIPE_SECRET_KEY, {
@@ -30,63 +30,12 @@ export async function POST(request: NextRequest) {
 
     const stripeClient = getStripe();
     
-    // Demo mode when Stripe is not configured
+    // Check if Stripe is properly configured
     if (!stripeClient) {
-      console.log('Running in demo mode - no real Stripe connection');
-      
-      // Demo customers for testing
-      const demoCustomers: Record<string, any> = {
-        'test@example.com': {
-          id: 'cus_demo_123',
-          email: 'test@example.com',
-          name: 'Test User',
-          hasSubscription: true,
-        },
-        'demo@example.com': {
-          id: 'cus_demo_456',
-          email: 'demo@example.com',
-          name: 'Demo User',
-          hasSubscription: true,
-        },
-      };
-
-      const customer = demoCustomers[email.toLowerCase()];
-      
-      if (!customer) {
-        return NextResponse.json(
-          { error: 'No membership found for this email. Try test@example.com or demo@example.com for demo.' },
-          { status: 404 }
-        );
-      }
-
-      if (!customer.hasSubscription) {
-        return NextResponse.json(
-          { error: 'No active membership found' },
-          { status: 404 }
-        );
-      }
-
-      // Generate a JWT token for portal access
-      const token = jwt.sign(
-        { 
-          customerId: customer.id,
-          email: customer.email,
-          name: customer.name,
-          isDemo: true,
-        },
-        process.env.JWT_SECRET || 'demo-secret',
-        { expiresIn: '1h' }
+      return NextResponse.json(
+        { error: 'Payment system is not properly configured' },
+        { status: 503 }
       );
-
-      return NextResponse.json({
-        success: true,
-        token,
-        customer: {
-          name: customer.name,
-          email: customer.email,
-        },
-        demo: true,
-      });
     }
 
     // Real Stripe mode
