@@ -4,10 +4,11 @@ import jwt from 'jsonwebtoken';
 
 let stripe: Stripe | null = null;
 
-function getStripe(): Stripe {
+function getStripe(): Stripe | null {
   if (!stripe) {
-    if (!process.env.STRIPE_SECRET_KEY) {
-      throw new Error('Stripe secret key is not configured');
+    if (!process.env.STRIPE_SECRET_KEY || process.env.STRIPE_SECRET_KEY.includes('placeholder')) {
+      console.warn('Stripe is not properly configured - using demo mode');
+      return null;
     }
     stripe = new Stripe(process.env.STRIPE_SECRET_KEY, {
       apiVersion: '2024-12-18.acacia',
@@ -32,7 +33,7 @@ export async function GET(request: NextRequest) {
     // Verify the token
     let decoded: any;
     try {
-      decoded = jwt.verify(token, process.env.JWT_SECRET as string);
+      decoded = jwt.verify(token, process.env.JWT_SECRET || 'demo-secret');
     } catch (error) {
       return NextResponse.json(
         { error: 'Invalid or expired token' },
@@ -40,72 +41,118 @@ export async function GET(request: NextRequest) {
       );
     }
 
-    const { customerId, email, name } = decoded;
+    const { customerId, email, name, isDemo } = decoded;
 
-    // Fetch customer data from Stripe
-    const customer = await getStripe().customers.retrieve(customerId);
-
-    // Fetch active subscriptions
-    const subscriptions = await getStripe().subscriptions.list({
-      customer: customerId,
-      status: 'active',
-      limit: 1,
-    });
-
-    if (!subscriptions.data.length) {
-      return NextResponse.json(
-        { error: 'No active subscription found' },
-        { status: 404 }
-      );
+    // Handle demo mode
+    if (isDemo || !getStripe()) {
+      const currentDate = new Date();
+      const nextMonth = new Date(currentDate.getFullYear(), currentDate.getMonth() + 1, 1);
+      
+      return NextResponse.json({
+        customer: {
+          name: name || 'Demo Member',
+          email: email,
+          created: new Date().toISOString(),
+        },
+        subscription: {
+          status: 'active',
+          current_period_end: Math.floor(nextMonth.getTime() / 1000),
+          cancel_at_period_end: false,
+        },
+        credits: {
+          available: 15,
+          monthly: 15,
+          used: 0,
+        },
+        protectorReplacements: {
+          available: 3,
+          used: 0,
+          total: 3,
+        },
+        demo: true,
+      });
     }
 
-    const subscription = subscriptions.data[0];
-
-    // Calculate credits (for demonstration, we'll use metadata or default values)
-    // In a real app, you'd track this in a database
-    const currentMonth = new Date().getMonth();
-    const subscriptionStartMonth = new Date(subscription.created * 1000).getMonth();
-    const monthsActive = currentMonth - subscriptionStartMonth + 1;
+    // Real Stripe mode
+    const stripeClient = getStripe()!;
     
-    // Simulated data - in production, this should come from a database
-    const credits = {
-      available: 15, // Current month's credit
-      monthly: 15,
-      used: 0,
-      total: monthsActive * 15,
-    };
+    try {
+      // Fetch customer data from Stripe
+      const customer = await stripeClient.customers.retrieve(customerId);
 
-    const protectorReplacements = {
-      available: 3,
-      used: 0,
-      total: 3,
-    };
+      // Fetch active subscriptions
+      const subscriptions = await stripeClient.subscriptions.list({
+        customer: customerId,
+        status: 'active',
+        limit: 1,
+      });
 
-    // Check if customer metadata exists, otherwise use defaults
-    const customerMetadata = (customer as any).metadata || {};
-    
-    return NextResponse.json({
-      customer: {
-        name: name || (customer as any).name || 'Member',
-        email: (customer as any).email || email,
-        created: (customer as any).created ? new Date((customer as any).created * 1000).toISOString() : new Date().toISOString(),
-      },
-      subscription: {
-        status: subscription.status,
-        current_period_end: subscription.current_period_end,
-        cancel_at_period_end: subscription.cancel_at_period_end,
-      },
-      credits: {
-        available: parseInt(customerMetadata.credits_available || credits.available.toString()),
-        monthly: parseInt(customerMetadata.credits_monthly || credits.monthly.toString()),
-        used: parseInt(customerMetadata.credits_used || credits.used.toString()),
-      },
-      protectorReplacements: {
-        available: parseInt(customerMetadata.protector_available || protectorReplacements.available.toString()),
-        used: parseInt(customerMetadata.protector_used || protectorReplacements.used.toString()),
-        total: parseInt(customerMetadata.protector_total || protectorReplacements.total.toString()),
-      },
-    });
+      if (!subscriptions.data.length) {
+        return NextResponse.json(
+          { error: 'No active subscription found' },
+          { status: 404 }
+        );
+      }
+
+      const subscription = subscriptions.data[0];
+
+      // Calculate credits (for demonstration, we'll use metadata or default values)
+      // In a real app, you'd track this in a database
+      const currentMonth = new Date().getMonth();
+      const subscriptionStartMonth = new Date(subscription.created * 1000).getMonth();
+      const monthsActive = currentMonth - subscriptionStartMonth + 1;
+      
+      // Simulated data - in production, this should come from a database
+      const credits = {
+        available: 15, // Current month's credit
+        monthly: 15,
+        used: 0,
+        total: monthsActive * 15,
+      };
+
+      const protectorReplacements = {
+        available: 3,
+        used: 0,
+        total: 3,
+      };
+
+      // Check if customer metadata exists, otherwise use defaults
+      const customerMetadata = (customer as any).metadata || {};
+      
+      return NextResponse.json({
+        customer: {
+          name: name || (customer as any).name || 'Member',
+          email: (customer as any).email || email,
+          created: (customer as any).created ? new Date((customer as any).created * 1000).toISOString() : new Date().toISOString(),
+        },
+        subscription: {
+          status: subscription.status,
+          current_period_end: subscription.current_period_end,
+          cancel_at_period_end: subscription.cancel_at_period_end,
+        },
+        credits: {
+          available: parseInt(customerMetadata.credits_available || credits.available.toString()),
+          monthly: parseInt(customerMetadata.credits_monthly || credits.monthly.toString()),
+          used: parseInt(customerMetadata.credits_used || credits.used.toString()),
+        },
+        protectorReplacements: {
+          available: parseInt(customerMetadata.protector_available || protectorReplacements.available.toString()),
+          used: parseInt(customerMetadata.protector_used || protectorReplacements.used.toString()),
+          total: parseInt(customerMetadata.protector_total || protectorReplacements.total.toString()),
+        },
+      });
+    } catch (stripeError: any) {
+      console.error('Stripe API error:', stripeError);
+      
+      if (stripeError.type === 'StripeAuthenticationError') {
+        return NextResponse.json(
+          { error: 'Stripe authentication failed. Please check your API keys.' },
+          { status: 503 }
+        );
+      }
+      
+      throw stripeError;
+    }
 
   } catch (error) {
     console.error('Portal data error:', error);
