@@ -44,27 +44,24 @@ export default function Navbar() {
   return (
     <>
       {/* Top Banner */}
-      <div className="bg-[#1e40af] text-white text-center py-2 px-4">
-        <p className="text-sm font-medium">One-Year Low Price Guarantee</p>
+      <div className="bg-[#1e40af] text-white text-center py-2.5 px-4">
+        <p className="text-sm font-medium tracking-wide">One-Year Low Price Guarantee</p>
       </div>
       
       {/* Main Navigation */}
-      <nav className="bg-white shadow-md sticky top-0 z-50 border-b border-gray-100">
+      <nav className="bg-white shadow-lg sticky top-0 z-50">
         <div className="container-mobile">
-          <div className="flex justify-between items-center h-16 md:h-20">
+          <div className="flex justify-between items-center h-20">
             {/* Logo */}
-            <Link href="/" className="flex items-center space-x-3">
-              <div className="bg-[#00bcd4] text-white px-3 py-1.5 rounded font-bold text-lg shadow-sm">
+            <Link href="/" className="flex items-center">
+              <div className="bg-[#00bcd4] text-white px-4 py-2 rounded-lg font-bold text-xl shadow-md mr-3">
                 LA
               </div>
-              <span className="text-xl md:text-2xl font-bold text-[#1e40af]">MATTRESS</span>
+              <span className="text-2xl font-bold text-[#1e40af] hidden sm:inline">MATTRESS</span>
             </Link>
             
             {/* Desktop Navigation */}
-            <div className="hidden md:flex items-center space-x-8">
-              <Link href="/pricing" className="text-gray-700 hover:text-[#1e40af] font-medium transition-colors duration-200">
-                Pricing
-              </Link>
+            <div className="hidden md:flex items-center space-x-6 lg:space-x-8">
               
               <Link href="/portal" className="text-gray-700 hover:text-[#1e40af] font-medium transition-colors duration-200">
                 Member Portal
@@ -80,7 +77,7 @@ export default function Navbar() {
                   </Link>
                   <button
                     onClick={handleLogout}
-                    className="bg-red-500 text-white px-4 py-2 rounded-md hover:bg-red-600 transition-colors font-medium"
+                    className="bg-red-500 text-white px-5 py-2.5 rounded-lg hover:bg-red-600 transition-colors font-medium ml-2"
                   >
                     Logout
                   </button>
@@ -95,7 +92,7 @@ export default function Navbar() {
                   </Link>
                   <Link
                     href="/register"
-                    className="la-button-primary"
+                    className="bg-[#ffd700] hover:bg-[#ffed4a] text-[#1e40af] font-bold px-6 py-2.5 rounded-lg transition-all shadow-md hover:shadow-lg ml-2"
                   >
                     Get Started
                   </Link>
@@ -106,7 +103,8 @@ export default function Navbar() {
             {/* Mobile Menu Button */}
             <button
               onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
-              className="md:hidden text-gray-700 hover:text-[#1e40af] p-2 rounded-md hover:bg-gray-50 transition-colors"
+              className="md:hidden text-gray-700 hover:text-[#1e40af] p-2 rounded-lg hover:bg-gray-50 transition-colors"
+              aria-label="Toggle menu"
             >
               <svg
                 className="w-6 h-6"
@@ -135,11 +133,11 @@ export default function Navbar() {
 
           {/* Mobile Menu */}
           {isMobileMenuOpen && (
-            <div className="md:hidden border-t border-gray-100 py-4 animate-fadeIn">
+            <div className="md:hidden border-t border-gray-100 py-4 animate-fadeIn bg-white">
               <div className="flex flex-col space-y-2">
                 <Link
                   href="/pricing"
-                  className="text-gray-700 hover:text-[#1e40af] font-medium py-3 px-4 hover:bg-gray-50 rounded-md transition-all"
+                  className="text-gray-700 hover:text-[#1e40af] font-medium py-3 px-4 hover:bg-gray-50 rounded-lg transition-all"
                   onClick={() => setIsMobileMenuOpen(false)}
                 >
                   Pricing
@@ -147,7 +145,7 @@ export default function Navbar() {
                 
                 <Link
                   href="/portal"
-                  className="text-gray-700 hover:text-[#1e40af] font-medium py-3 px-4 hover:bg-gray-50 rounded-md transition-all"
+                  className="text-gray-700 hover:text-[#1e40af] font-medium py-3 px-4 hover:bg-gray-50 rounded-lg transition-all"
                   onClick={() => setIsMobileMenuOpen(false)}
                 >
                   Member Portal
@@ -157,22 +155,22 @@ export default function Navbar() {
                   <>
                     <Link
                       href="/dashboard"
-                      className="text-gray-700 hover:text-[#1e40af] font-medium py-3 px-4 hover:bg-gray-50 rounded-md transition-all"
+                      className="text-gray-700 hover:text-[#1e40af] font-medium py-3 px-4 hover:bg-gray-50 rounded-lg transition-all"
                       onClick={() => setIsMobileMenuOpen(false)}
                     >
                       Dashboard
                     </Link>
                     <Link
                       href="/billing"
-                      className="text-gray-700 hover:text-[#1e40af] font-medium py-3 px-4 hover:bg-gray-50 rounded-md transition-all"
+                      className="text-gray-700 hover:text-[#1e40af] font-medium py-3 px-4 hover:bg-gray-50 rounded-lg transition-all"
                       onClick={() => setIsMobileMenuOpen(false)}
                     >
                       Billing
                     </Link>
-                    <div className="pt-2 px-4">
+                    <div className="pt-3 px-4">
                       <button
                         onClick={handleLogout}
-                        className="w-full bg-red-500 text-white px-4 py-3 rounded-md hover:bg-red-600 transition-colors font-medium"
+                        className="w-full bg-red-500 text-white px-4 py-3 rounded-lg hover:bg-red-600 transition-colors font-medium"
                       >
                         Logout
                       </button>
@@ -182,15 +180,15 @@ export default function Navbar() {
                   <>
                     <Link
                       href="/login"
-                      className="text-gray-700 hover:text-[#1e40af] font-medium py-3 px-4 hover:bg-gray-50 rounded-md transition-all"
+                      className="text-gray-700 hover:text-[#1e40af] font-medium py-3 px-4 hover:bg-gray-50 rounded-lg transition-all"
                       onClick={() => setIsMobileMenuOpen(false)}
                     >
                       Login
                     </Link>
-                    <div className="pt-2 px-4">
+                    <div className="pt-3 px-4">
                       <Link
                         href="/register"
-                        className="block w-full la-button-primary text-center"
+                        className="block w-full bg-[#ffd700] hover:bg-[#ffed4a] text-[#1e40af] font-bold text-center py-3 rounded-lg transition-all shadow-md"
                         onClick={() => setIsMobileMenuOpen(false)}
                       >
                         Get Started

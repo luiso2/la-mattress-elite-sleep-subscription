@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
+import Navbar from '@/components/Navbar';
 
 interface PortalData {
   customer: {
@@ -87,379 +88,255 @@ export default function PortalDashboard() {
 
   if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center" style={{ background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)' }}>
-        <div className="text-white text-2xl">Loading your portal...</div>
+      <div className="min-h-screen bg-gray-50">
+        <Navbar />
+        <div className="flex items-center justify-center h-96">
+          <div className="text-center">
+            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[#00bcd4] mx-auto"></div>
+            <p className="mt-4 text-gray-600">Loading your portal...</p>
+          </div>
+        </div>
       </div>
     );
   }
 
   if (error || !data) {
     return (
-      <div className="min-h-screen flex items-center justify-center" style={{ background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)' }}>
-        <div className="bg-white p-8 rounded-2xl shadow-2xl">
-          <p className="text-red-600">{error || 'Unable to load portal data'}</p>
-          <button
-            onClick={() => router.push('/portal')}
-            className="mt-4 px-6 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700"
-          >
-            Back to Login
-          </button>
+      <div className="min-h-screen bg-gray-50">
+        <Navbar />
+        <div className="container-mobile py-12">
+          <div className="card max-w-md mx-auto text-center">
+            <p className="text-red-600 mb-4">{error || 'Unable to load portal data'}</p>
+            <button
+              onClick={() => router.push('/portal')}
+              className="la-button-secondary"
+            >
+              Back to Login
+            </button>
+          </div>
         </div>
       </div>
     );
   }
 
-  const styles = `
-    .portal-container {
-      font-family: 'Arial', sans-serif;
-      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-      min-height: 100vh;
-      padding: 20px;
-    }
-    
-    .container {
-      max-width: 1200px;
-      margin: 0 auto;
-      background: white;
-      border-radius: 20px;
-      box-shadow: 0 20px 40px rgba(0,0,0,0.1);
-      overflow: hidden;
-    }
-    
-    .header {
-      background: linear-gradient(135deg, #2c3e50 0%, #34495e 100%);
-      color: white;
-      padding: 30px;
-      text-align: center;
-    }
-    
-    .member-info {
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      gap: 20px;
-      margin-bottom: 20px;
-    }
-    
-    .avatar {
-      width: 80px;
-      height: 80px;
-      border-radius: 50%;
-      background: linear-gradient(135deg, #f39c12, #e67e22);
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      font-size: 30px;
-      font-weight: bold;
-    }
-    
-    .member-details h1 {
-      font-size: 2.5rem;
-      margin-bottom: 10px;
-    }
-    
-    .member-status {
-      background: rgba(46, 204, 113, 0.2);
-      color: #27ae60;
-      padding: 8px 20px;
-      border-radius: 20px;
-      font-weight: bold;
-      display: inline-block;
-    }
-    
-    .main-content {
-      padding: 40px;
-    }
-    
-    .dashboard-grid {
-      display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
-      gap: 30px;
-    }
-    
-    .card {
-      background: white;
-      border-radius: 15px;
-      padding: 25px;
-      box-shadow: 0 10px 30px rgba(0,0,0,0.1);
-      border: 1px solid #eee;
-      transition: transform 0.3s ease;
-    }
-    
-    .card:hover {
-      transform: translateY(-5px);
-    }
-    
-    .card-header {
-      display: flex;
-      align-items: center;
-      gap: 15px;
-      margin-bottom: 20px;
-    }
-    
-    .card-icon {
-      width: 50px;
-      height: 50px;
-      border-radius: 12px;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      font-size: 24px;
-    }
-    
-    .credit-icon { background: linear-gradient(135deg, #f39c12, #e67e22); }
-    .protection-icon { background: linear-gradient(135deg, #e74c3c, #c0392b); }
-    .delivery-icon { background: linear-gradient(135deg, #3498db, #2980b9); }
-    .warranty-icon { background: linear-gradient(135deg, #9b59b6, #8e44ad); }
-    
-    .card h3 {
-      color: #2c3e50;
-      font-size: 1.3rem;
-    }
-    
-    .balance-amount {
-      font-size: 3rem;
-      font-weight: bold;
-      color: #27ae60;
-      margin: 10px 0;
-    }
-    
-    .sub-amount {
-      font-size: 1.2rem;
-      color: #7f8c8d;
-    }
-    
-    .benefit-list {
-      list-style: none;
-    }
-    
-    .benefit-item {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      gap: 10px;
-      padding: 12px 0;
-      border-bottom: 1px solid #ecf0f1;
-    }
-    
-    .benefit-item:last-child {
-      border-bottom: none;
-    }
-    
-    .status-badge {
-      padding: 5px 12px;
-      border-radius: 15px;
-      font-size: 0.85rem;
-      font-weight: bold;
-    }
-    
-    .available { background: #d5f4e6; color: #27ae60; }
-    .pending { background: #fff3cd; color: #856404; }
-    .used { background: #f8d7da; color: #721c24; }
-    
-    .progress-bar {
-      width: 100%;
-      height: 20px;
-      background: #ecf0f1;
-      border-radius: 10px;
-      overflow: hidden;
-      margin: 10px 0;
-    }
-    
-    .progress-fill {
-      height: 100%;
-      background: linear-gradient(135deg, #27ae60, #2ecc71);
-      transition: width 0.3s ease;
-    }
-    
-    .renewal-info {
-      background: linear-gradient(135deg, #e8f5e8, #d4edda);
-      padding: 20px;
-      border-radius: 10px;
-      border-left: 5px solid #27ae60;
-      margin-top: 20px;
-    }
-    
-    .notification {
-      background: linear-gradient(135deg, #fff3cd, #ffeaa7);
-      padding: 15px;
-      border-radius: 10px;
-      border-left: 5px solid #f39c12;
-      margin-bottom: 20px;
-    }
-    
-    @keyframes pulse {
-      0% { transform: scale(1); }
-      50% { transform: scale(1.02); }
-      100% { transform: scale(1); }
-    }
-  `;
-
   return (
-    <>
-      <style dangerouslySetInnerHTML={{ __html: styles }} />
-      <div className="portal-container">
-        <div className="container">
-          <div className="header">
-            <div className="member-info">
-              <div className="avatar">{getInitials(data.customer.name)}</div>
-              <div className="member-details">
-                <h1>Hello, {data.customer.name}!</h1>
-                <div className="member-status">✨ Active ELITE SLEEP+ Member</div>
+    <div className="min-h-screen bg-gray-50">
+      <Navbar />
+      
+      {/* Header */}
+      <div className="bg-gradient-to-r from-[#1e40af] to-[#00bcd4] text-white">
+        <div className="container-mobile py-12">
+          <div className="flex items-center justify-center mb-6">
+            <div className="w-20 h-20 bg-white rounded-full flex items-center justify-center text-[#1e40af] text-2xl font-bold shadow-lg">
+              {getInitials(data.customer.name)}
+            </div>
+          </div>
+          <h1 className="text-3xl lg:text-4xl font-bold text-center mb-2">
+            Welcome, {data.customer.name}!
+          </h1>
+          <p className="text-center text-white/90">
+            ✨ Active ELITE SLEEP+ Member since {new Date(data.customer.created).toLocaleDateString()}
+          </p>
+        </div>
+      </div>
+      
+      <div className="container-mobile py-8">
+        {/* Welcome Message */}
+        <div className="bg-[#ffd700] rounded-lg p-6 mb-8 shadow-md">
+          <p className="text-[#1e40af] font-bold text-lg flex items-center">
+            <span className="text-2xl mr-2">🎉</span>
+            Welcome to ELITE SLEEP+! Your membership is active and all benefits are available.
+          </p>
+        </div>
+        
+        {/* Benefits Grid */}
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
+          {/* Available Credit */}
+          <div className="card">
+            <div className="flex items-center mb-4">
+              <div className="w-12 h-12 bg-green-500 rounded-lg flex items-center justify-center text-white text-2xl mr-4">
+                💰
+              </div>
+              <h3 className="text-xl font-bold text-[#1e40af]">Available Credit</h3>
+            </div>
+            
+            <div className="text-center py-6 bg-green-50 rounded-lg mb-4">
+              <div className="text-5xl font-bold text-green-600">${data.credits.available}</div>
+              <div className="text-gray-600 mt-2">Current Balance</div>
+            </div>
+            
+            <div className="space-y-3">
+              <div className="flex justify-between py-2 border-b border-gray-100">
+                <span className="text-gray-600">Monthly credit:</span>
+                <span className="font-semibold">${data.credits.monthly}</span>
+              </div>
+              <div className="flex justify-between py-2">
+                <span className="text-gray-600">Total available:</span>
+                <span className="font-bold text-green-600">${data.credits.available}</span>
               </div>
             </div>
-            <p>{data.customer.email} | Member since: {new Date(data.customer.created).toLocaleDateString()}</p>
+            
+            <div className="bg-[#e3f2fd] rounded-lg p-4 mt-4">
+              <p className="text-sm text-[#1e40af]">
+                <strong>Next month:</strong> You'll receive an additional ${data.credits.monthly}
+              </p>
+            </div>
           </div>
           
-          <div className="main-content">
-            <div className="notification">
-              <strong>🎉 Welcome to ELITE SLEEP+!</strong> 
-              Your membership is active and all benefits are available to you.
+          {/* Mattress Protection */}
+          <div className="card">
+            <div className="flex items-center mb-4">
+              <div className="w-12 h-12 bg-red-500 rounded-lg flex items-center justify-center text-white text-2xl mr-4">
+                🛡️
+              </div>
+              <h3 className="text-xl font-bold text-[#1e40af]">Mattress Protection</h3>
             </div>
             
-            <div className="dashboard-grid">
-              {/* Available Credit */}
-              <div className="card">
-                <div className="card-header">
-                  <div className="card-icon credit-icon">💰</div>
-                  <h3>Available Credit</h3>
+            <div className="space-y-3">
+              {[1, 2, 3].map((num) => (
+                <div key={num} className="flex justify-between items-center py-3 border-b border-gray-100">
+                  <span className="text-gray-700">Protector replacement #{num}</span>
+                  <span className={`px-3 py-1 rounded-full text-sm font-semibold ${
+                    num <= data.protectorReplacements.used 
+                      ? 'bg-red-100 text-red-700' 
+                      : 'bg-green-100 text-green-700'
+                  }`}>
+                    {num <= data.protectorReplacements.used ? 'Used' : 'Available'}
+                  </span>
                 </div>
-                <div className="balance-amount">${data.credits.available}</div>
-                <div className="sub-amount">Current monthly credit</div>
-                
-                <div style={{ margin: '20px 0' }}>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '5px' }}>
-                    <span>Monthly credit:</span>
-                    <span>${data.credits.monthly}</span>
-                  </div>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', fontWeight: 'bold' }}>
-                    <span>Total available:</span>
-                    <span style={{ color: '#27ae60' }}>${data.credits.available}</span>
-                  </div>
-                  <div style={{ marginTop: '10px', padding: '10px', background: '#e8f5e8', borderRadius: '8px', fontSize: '0.9rem' }}>
-                    <strong>Next month:</strong> You'll receive an additional ${data.credits.monthly} ($120 annual ÷ 12 months)
-                  </div>
-                </div>
-              </div>
-              
-              {/* Mattress Protection */}
-              <div className="card">
-                <div className="card-header">
-                  <div className="card-icon protection-icon">🛡</div>
-                  <h3>Mattress Protection</h3>
-                </div>
-                
-                <ul className="benefit-list">
-                  {[1, 2, 3].map((num) => (
-                    <li key={num} className="benefit-item">
-                      <span>Protector replacement #{num}</span>
-                      <span className={`status-badge ${num <= data.protectorReplacements.used ? 'used' : 'available'}`}>
-                        {num <= data.protectorReplacements.used ? 'Used' : 'Available'}
-                      </span>
-                    </li>
-                  ))}
-                </ul>
-                
-                <div style={{ marginTop: '20px' }}>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '5px' }}>
-                    <span>Replacements used:</span>
-                    <span>{data.protectorReplacements.used} of {data.protectorReplacements.total}</span>
-                  </div>
-                  <div className="progress-bar">
-                    <div 
-                      className="progress-fill" 
-                      style={{ width: `${(data.protectorReplacements.used / data.protectorReplacements.total) * 100}%` }}
-                    />
-                  </div>
-                  <div style={{ marginTop: '10px', padding: '10px', background: '#e8f5e8', borderRadius: '8px', fontSize: '0.9rem' }}>
-                    <strong>Value:</strong> ${(data.protectorReplacements.total - data.protectorReplacements.used) * 100} in free replacements available
-                  </div>
-                </div>
-              </div>
-              
-              {/* Delivery Services */}
-              <div className="card">
-                <div className="card-header">
-                  <div className="card-icon delivery-icon">🚚</div>
-                  <h3>Delivery Services</h3>
-                </div>
-                
-                <ul className="benefit-list">
-                  <li className="benefit-item">
-                    <span>Free delivery</span>
-                    <span className="status-badge available">Unlimited</span>
-                  </li>
-                  <li className="benefit-item">
-                    <span>Professional installation</span>
-                    <span className="status-badge available">Included</span>
-                  </li>
-                  <li className="benefit-item">
-                    <span>Old mattress removal</span>
-                    <span className="status-badge available">Included</span>
-                  </li>
-                </ul>
-                
-                <div className="renewal-info">
-                  <strong>Total value: $75 per delivery</strong><br />
-                  <small>Guaranteed savings on every purchase</small>
-                </div>
-              </div>
-              
-              {/* Warranty and Protection */}
-              <div className="card">
-                <div className="card-header">
-                  <div className="card-icon warranty-icon">♾</div>
-                  <h3>Lifetime Warranty</h3>
-                </div>
-                
-                <ul className="benefit-list">
-                  <li className="benefit-item">
-                    <span>Protection against defects</span>
-                    <span className="status-badge available">Active</span>
-                  </li>
-                  <li className="benefit-item">
-                    <span>Protection against sagging</span>
-                    <span className="status-badge available">Active</span>
-                  </li>
-                  <li className="benefit-item">
-                    <span>Complete stain protection</span>
-                    <span className="status-badge available">Active</span>
-                  </li>
-                  <li className="benefit-item">
-                    <span>Professional cleaning service</span>
-                    <span className="status-badge available">Included</span>
-                  </li>
-                </ul>
-                
-                <div className="renewal-info">
-                  <strong>Your mattress is protected forever</strong><br />
-                  <small>While others offer 10 years, you have unlimited protection</small>
-                </div>
-              </div>
+              ))}
             </div>
             
-            <div className="renewal-info">
-              <h4>📅 Membership Information</h4>
-              <p><strong>Your membership will automatically renew on {formatDate(data.subscription.current_period_end)}</strong></p>
-              <p>Annual cost: $120 | You receive: $180 in store credit (150% value)</p>
-              <p>Monthly credits: $15 each month for 12 months</p>
-              <p><small>You can cancel at any time before the renewal date.</small></p>
+            <div className="mt-4">
+              <div className="flex justify-between mb-2 text-sm">
+                <span className="text-gray-600">Used:</span>
+                <span className="font-semibold">{data.protectorReplacements.used} of {data.protectorReplacements.total}</span>
+              </div>
+              <div className="w-full h-4 bg-gray-200 rounded-full overflow-hidden">
+                <div 
+                  className="h-full bg-gradient-to-r from-red-400 to-red-500 transition-all duration-500"
+                  style={{ width: `${(data.protectorReplacements.used / data.protectorReplacements.total) * 100}%` }}
+                />
+              </div>
+              <p className="text-xs text-gray-600 mt-2">
+                ${(data.protectorReplacements.total - data.protectorReplacements.used) * 100} value remaining
+              </p>
             </div>
-
-            <div style={{ marginTop: '20px', textAlign: 'center' }}>
-              <button
-                onClick={() => {
-                  localStorage.removeItem('portal_token');
-                  router.push('/portal');
-                }}
-                className="px-6 py-2 bg-gray-600 text-white rounded-lg hover:bg-gray-700"
-              >
-                Logout
-              </button>
+          </div>
+          
+          {/* Delivery Services */}
+          <div className="card">
+            <div className="flex items-center mb-4">
+              <div className="w-12 h-12 bg-blue-500 rounded-lg flex items-center justify-center text-white text-2xl mr-4">
+                🚚
+              </div>
+              <h3 className="text-xl font-bold text-[#1e40af]">Delivery Services</h3>
+            </div>
+            
+            <ul className="space-y-3">
+              <li className="flex justify-between items-center py-3 border-b border-gray-100">
+                <span className="text-gray-700">Free delivery</span>
+                <span className="px-3 py-1 bg-blue-100 text-blue-700 rounded-full text-sm font-semibold">
+                  Unlimited
+                </span>
+              </li>
+              <li className="flex justify-between items-center py-3 border-b border-gray-100">
+                <span className="text-gray-700">Professional setup</span>
+                <span className="px-3 py-1 bg-blue-100 text-blue-700 rounded-full text-sm font-semibold">
+                  Included
+                </span>
+              </li>
+              <li className="flex justify-between items-center py-3">
+                <span className="text-gray-700">Old mattress removal</span>
+                <span className="px-3 py-1 bg-blue-100 text-blue-700 rounded-full text-sm font-semibold">
+                  Included
+                </span>
+              </li>
+            </ul>
+            
+            <div className="bg-[#e3f2fd] rounded-lg p-4 mt-4">
+              <p className="text-sm text-[#1e40af] font-semibold">
+                Total value: $75 per delivery
+              </p>
+            </div>
+          </div>
+          
+          {/* Lifetime Warranty */}
+          <div className="card">
+            <div className="flex items-center mb-4">
+              <div className="w-12 h-12 bg-purple-500 rounded-lg flex items-center justify-center text-white text-2xl mr-4">
+                ♾️
+              </div>
+              <h3 className="text-xl font-bold text-[#1e40af]">Lifetime Warranty</h3>
+            </div>
+            
+            <ul className="space-y-3">
+              <li className="flex justify-between items-center py-3 border-b border-gray-100">
+                <span className="text-gray-700">Defects protection</span>
+                <span className="px-3 py-1 bg-green-100 text-green-700 rounded-full text-sm font-semibold">
+                  Active
+                </span>
+              </li>
+              <li className="flex justify-between items-center py-3 border-b border-gray-100">
+                <span className="text-gray-700">Sagging protection</span>
+                <span className="px-3 py-1 bg-green-100 text-green-700 rounded-full text-sm font-semibold">
+                  Active
+                </span>
+              </li>
+              <li className="flex justify-between items-center py-3 border-b border-gray-100">
+                <span className="text-gray-700">Stain protection</span>
+                <span className="px-3 py-1 bg-green-100 text-green-700 rounded-full text-sm font-semibold">
+                  Active
+                </span>
+              </li>
+              <li className="flex justify-between items-center py-3">
+                <span className="text-gray-700">Professional cleaning</span>
+                <span className="px-3 py-1 bg-green-100 text-green-700 rounded-full text-sm font-semibold">
+                  Included
+                </span>
+              </li>
+            </ul>
+            
+            <div className="bg-purple-50 rounded-lg p-4 mt-4">
+              <p className="text-sm text-purple-800 font-semibold">
+                Your mattress is protected forever
+              </p>
             </div>
           </div>
         </div>
+        
+        {/* Membership Info */}
+        <div className="card bg-gradient-to-r from-[#e3f2fd] to-white">
+          <h4 className="text-xl font-bold text-[#1e40af] mb-4">📅 Membership Information</h4>
+          <div className="grid md:grid-cols-2 gap-4">
+            <div>
+              <p className="font-semibold text-gray-800 mb-2">
+                Next renewal: {formatDate(data.subscription.current_period_end)}
+              </p>
+              <p className="text-gray-600">Annual cost: $120</p>
+              <p className="text-green-600 font-semibold">You receive: $180 in store credit (150% value)</p>
+            </div>
+            <div className="bg-white rounded-lg p-4">
+              <p className="font-semibold text-[#1e40af] mb-1">Monthly breakdown:</p>
+              <p className="text-gray-600">$15 credit every month for 12 months</p>
+              <p className="text-sm text-gray-500 mt-2">Cancel anytime before renewal</p>
+            </div>
+          </div>
+        </div>
+
+        {/* Logout Button */}
+        <div className="text-center mt-8">
+          <button
+            onClick={() => {
+              localStorage.removeItem('portal_token');
+              router.push('/portal');
+            }}
+            className="la-button-secondary"
+          >
+            Logout from Portal
+          </button>
+        </div>
       </div>
-    </>
+    </div>
   );
 }

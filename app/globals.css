@@ -89,6 +89,7 @@ p {
 a {
   color: inherit;
   text-decoration: none;
+  transition: color 0.2s ease;
 }
 
 /* Button Base Styles */
@@ -114,6 +115,7 @@ button {
   text-decoration: none;
   font-size: 1rem;
   box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+  white-space: nowrap;
 }
 
 .la-button-primary:hover {
@@ -136,6 +138,7 @@ button {
   text-decoration: none;
   font-size: 1rem;
   box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+  white-space: nowrap;
 }
 
 .la-button-secondary:hover {
@@ -177,9 +180,14 @@ button {
 .card {
   background: white;
   border-radius: 1rem;
-  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.07);
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.08);
   padding: 1.5rem;
   border: 1px solid var(--la-border);
+  transition: all 0.3s ease;
+}
+
+.card:hover {
+  box-shadow: 0 15px 35px rgba(0, 0, 0, 0.12);
 }
 
 @media (min-width: 768px) {
@@ -196,12 +204,13 @@ input[type="tel"],
 select,
 textarea {
   width: 100%;
-  padding: 0.75rem 1rem;
+  padding: 0.875rem 1rem;
   border: 1px solid var(--la-border);
   border-radius: 0.5rem;
   font-size: 1rem;
   transition: all 0.2s ease;
   font-family: inherit;
+  background-color: white;
 }
 
 input:focus,
@@ -246,28 +255,62 @@ textarea:focus {
   animation: fadeIn 0.3s ease-out;
 }
 
+/* Shadows */
+.shadow-soft {
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.07);
+}
+
+.shadow-medium {
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.08);
+}
+
+.shadow-large {
+  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
+}
+
 /* Fix for overlapping elements */
-.z-10 {
-  z-index: 10;
-}
-
-.z-20 {
-  z-index: 20;
-}
-
-.z-30 {
-  z-index: 30;
-}
-
-.z-40 {
-  z-index: 40;
-}
-
-.z-50 {
-  z-index: 50;
-}
+.z-10 { z-index: 10; }
+.z-20 { z-index: 20; }
+.z-30 { z-index: 30; }
+.z-40 { z-index: 40; }
+.z-50 { z-index: 50; }
 
 /* Ensure proper text rendering */
 .text-balance {
   text-wrap: balance;
+}
+
+/* Custom Scrollbar */
+::-webkit-scrollbar {
+  width: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: #f1f1f1;
+}
+
+::-webkit-scrollbar-thumb {
+  background: var(--la-light-blue);
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: var(--la-dark-blue);
+}
+
+/* Responsive Images */
+img {
+  max-width: 100%;
+  height: auto;
+}
+
+/* Selection */
+::selection {
+  background-color: var(--la-light-blue);
+  color: white;
+}
+
+::-moz-selection {
+  background-color: var(--la-light-blue);
+  color: white;
 }

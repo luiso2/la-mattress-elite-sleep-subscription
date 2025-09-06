@@ -43,7 +43,7 @@ export async function POST(request: NextRequest) {
       user.stripeCustomerId,
       user.email,
       `${config.app.url}/success?session_id={CHECKOUT_SESSION_ID}`,
-      `${config.app.url}/pricing`
+      `${config.app.url}/`
     );
 
     return ApiResponse.success({
