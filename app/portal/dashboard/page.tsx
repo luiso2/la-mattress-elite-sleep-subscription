@@ -138,7 +138,7 @@ export default function PortalDashboard() {
               {getInitials(data.customer.name)}
             </div>
           </div>
-          <h1 className="text-3xl lg:text-4xl font-bold text-center mb-2">
+          <h1 className="text-3xl lg:text-4xl font-bold text-center mb-2 text-white">
             Welcome, {data.customer.name}!
           </h1>
           <p className="text-center text-white/90">
