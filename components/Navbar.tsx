@@ -43,41 +43,39 @@ export default function Navbar() {
 
   return (
     <>
-      {/* Top Banner - Desktop Only */}
-      <div className="hidden md:block bg-[#1e40af] text-white text-center py-2 px-4">
-        <p className="text-sm font-semibold">One-Year Low Price Guarantee</p>
+      {/* Top Banner */}
+      <div className="bg-[#1e40af] text-white text-center py-2 px-4">
+        <p className="text-sm font-medium">One-Year Low Price Guarantee</p>
       </div>
       
       {/* Main Navigation */}
-      <nav className="bg-white shadow-lg sticky top-0 z-50">
+      <nav className="bg-white shadow-md sticky top-0 z-50 border-b border-gray-100">
         <div className="container-mobile">
-          <div className="flex justify-between items-center h-16">
+          <div className="flex justify-between items-center h-16 md:h-20">
             {/* Logo */}
-            <div className="flex items-center">
-              <Link href="/" className="flex items-center space-x-2">
-                <div className="bg-[#00bcd4] text-white px-3 py-1 rounded font-bold text-lg">
-                  LA
-                </div>
-                <span className="text-2xl font-bold text-[#1e40af]">MATTRESS</span>
-              </Link>
-            </div>
+            <Link href="/" className="flex items-center space-x-3">
+              <div className="bg-[#00bcd4] text-white px-3 py-1.5 rounded font-bold text-lg shadow-sm">
+                LA
+              </div>
+              <span className="text-xl md:text-2xl font-bold text-[#1e40af]">MATTRESS</span>
+            </Link>
             
             {/* Desktop Navigation */}
-            <div className="hidden md:flex items-center space-x-6">
-              <Link href="/pricing" className="text-gray-700 hover:text-[#1e40af] font-medium transition-colors">
+            <div className="hidden md:flex items-center space-x-8">
+              <Link href="/pricing" className="text-gray-700 hover:text-[#1e40af] font-medium transition-colors duration-200">
                 Pricing
               </Link>
               
-              <Link href="/portal" className="text-gray-700 hover:text-[#1e40af] font-medium transition-colors">
+              <Link href="/portal" className="text-gray-700 hover:text-[#1e40af] font-medium transition-colors duration-200">
                 Member Portal
               </Link>
               
               {isAuthenticated ? (
                 <>
-                  <Link href="/dashboard" className="text-gray-700 hover:text-[#1e40af] font-medium transition-colors">
+                  <Link href="/dashboard" className="text-gray-700 hover:text-[#1e40af] font-medium transition-colors duration-200">
                     Dashboard
                   </Link>
-                  <Link href="/billing" className="text-gray-700 hover:text-[#1e40af] font-medium transition-colors">
+                  <Link href="/billing" className="text-gray-700 hover:text-[#1e40af] font-medium transition-colors duration-200">
                     Billing
                   </Link>
                   <button
@@ -91,13 +89,13 @@ export default function Navbar() {
                 <>
                   <Link
                     href="/login"
-                    className="text-gray-700 hover:text-[#1e40af] font-medium transition-colors"
+                    className="text-gray-700 hover:text-[#1e40af] font-medium transition-colors duration-200"
                   >
                     Login
                   </Link>
                   <Link
                     href="/register"
-                    className="la-button-primary text-sm"
+                    className="la-button-primary"
                   >
                     Get Started
                   </Link>
@@ -108,7 +106,7 @@ export default function Navbar() {
             {/* Mobile Menu Button */}
             <button
               onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
-              className="md:hidden text-gray-700 hover:text-[#1e40af] p-2"
+              className="md:hidden text-gray-700 hover:text-[#1e40af] p-2 rounded-md hover:bg-gray-50 transition-colors"
             >
               <svg
                 className="w-6 h-6"
@@ -137,11 +135,11 @@ export default function Navbar() {
 
           {/* Mobile Menu */}
           {isMobileMenuOpen && (
-            <div className="md:hidden border-t border-gray-200 py-4">
-              <div className="flex flex-col space-y-3">
+            <div className="md:hidden border-t border-gray-100 py-4 animate-fadeIn">
+              <div className="flex flex-col space-y-2">
                 <Link
                   href="/pricing"
-                  className="text-gray-700 hover:text-[#1e40af] font-medium py-2 px-4 hover:bg-gray-50 rounded transition-colors"
+                  className="text-gray-700 hover:text-[#1e40af] font-medium py-3 px-4 hover:bg-gray-50 rounded-md transition-all"
                   onClick={() => setIsMobileMenuOpen(false)}
                 >
                   Pricing
@@ -149,7 +147,7 @@ export default function Navbar() {
                 
                 <Link
                   href="/portal"
-                  className="text-gray-700 hover:text-[#1e40af] font-medium py-2 px-4 hover:bg-gray-50 rounded transition-colors"
+                  className="text-gray-700 hover:text-[#1e40af] font-medium py-3 px-4 hover:bg-gray-50 rounded-md transition-all"
                   onClick={() => setIsMobileMenuOpen(false)}
                 >
                   Member Portal
@@ -159,41 +157,45 @@ export default function Navbar() {
                   <>
                     <Link
                       href="/dashboard"
-                      className="text-gray-700 hover:text-[#1e40af] font-medium py-2 px-4 hover:bg-gray-50 rounded transition-colors"
+                      className="text-gray-700 hover:text-[#1e40af] font-medium py-3 px-4 hover:bg-gray-50 rounded-md transition-all"
                       onClick={() => setIsMobileMenuOpen(false)}
                     >
                       Dashboard
                     </Link>
                     <Link
                       href="/billing"
-                      className="text-gray-700 hover:text-[#1e40af] font-medium py-2 px-4 hover:bg-gray-50 rounded transition-colors"
+                      className="text-gray-700 hover:text-[#1e40af] font-medium py-3 px-4 hover:bg-gray-50 rounded-md transition-all"
                       onClick={() => setIsMobileMenuOpen(false)}
                     >
                       Billing
                     </Link>
-                    <button
-                      onClick={handleLogout}
-                      className="bg-red-500 text-white px-4 py-2 rounded-md hover:bg-red-600 transition-colors font-medium text-left"
-                    >
-                      Logout
-                    </button>
+                    <div className="pt-2 px-4">
+                      <button
+                        onClick={handleLogout}
+                        className="w-full bg-red-500 text-white px-4 py-3 rounded-md hover:bg-red-600 transition-colors font-medium"
+                      >
+                        Logout
+                      </button>
+                    </div>
                   </>
                 ) : (
                   <>
                     <Link
                       href="/login"
-                      className="text-gray-700 hover:text-[#1e40af] font-medium py-2 px-4 hover:bg-gray-50 rounded transition-colors"
+                      className="text-gray-700 hover:text-[#1e40af] font-medium py-3 px-4 hover:bg-gray-50 rounded-md transition-all"
                       onClick={() => setIsMobileMenuOpen(false)}
                     >
                       Login
                     </Link>
-                    <Link
-                      href="/register"
-                      className="la-button-primary mx-4 text-center"
-                      onClick={() => setIsMobileMenuOpen(false)}
-                    >
-                      Get Started
-                    </Link>
+                    <div className="pt-2 px-4">
+                      <Link
+                        href="/register"
+                        className="block w-full la-button-primary text-center"
+                        onClick={() => setIsMobileMenuOpen(false)}
+                      >
+                        Get Started
+                      </Link>
+                    </div>
                   </>
                 )}
               </div>

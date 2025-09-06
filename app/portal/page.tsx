@@ -44,49 +44,47 @@ export default function PortalLogin() {
     <div className="min-h-screen bg-gray-50">
       <Navbar />
       
-      <div className="flex items-center justify-center py-8 md:py-12 px-4 sm:px-6 lg:px-8">
-        <div className="max-w-md w-full">
-          <div className="bg-white rounded-lg shadow-lg p-6 md:p-8">
+      <div className="flex items-center justify-center py-12 px-4">
+        <div className="w-full max-w-md">
+          <div className="card animate-fadeIn">
             {/* Header */}
             <div className="text-center mb-8">
-              <div className="flex justify-center mb-4">
-                <div className="bg-[#00bcd4] text-white px-8 py-4 rounded-lg">
-                  <span className="text-3xl font-bold">LA</span>
-                </div>
+              <div className="inline-block bg-[#00bcd4] text-white px-8 py-4 rounded-lg shadow-md mb-4">
+                <span className="text-3xl font-bold">LA</span>
               </div>
-              <h1 className="text-2xl md:text-3xl font-bold text-[#1e40af] mb-2">
+              <h1 className="text-3xl font-bold text-[#1e40af] mb-2">
                 ELITE SLEEP+ Portal
               </h1>
               <p className="text-gray-600">Access your exclusive member benefits</p>
             </div>
 
             {/* Benefits Preview */}
-            <div className="bg-[#e3f2fd] rounded-lg p-4 mb-6">
-              <h3 className="font-semibold text-[#1e40af] mb-2">Your Member Benefits:</h3>
-              <ul className="space-y-2 text-sm text-gray-700">
+            <div className="bg-[#e3f2fd] rounded-lg p-6 mb-8 space-y-3">
+              <h3 className="font-bold text-[#1e40af] text-lg">Your Member Benefits:</h3>
+              <ul className="space-y-2 text-sm">
                 <li className="flex items-start">
-                  <svg className="w-4 h-4 text-green-500 mr-2 mt-0.5 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
+                  <svg className="w-5 h-5 text-green-500 mr-2 mt-0.5 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
                     <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
                   </svg>
-                  View and use your monthly $15 store credit
+                  <span className="text-gray-700">View and use your monthly $15 store credit</span>
                 </li>
                 <li className="flex items-start">
-                  <svg className="w-4 h-4 text-green-500 mr-2 mt-0.5 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
+                  <svg className="w-5 h-5 text-green-500 mr-2 mt-0.5 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
                     <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
                   </svg>
-                  Access lifetime warranty information
+                  <span className="text-gray-700">Access lifetime warranty information</span>
                 </li>
                 <li className="flex items-start">
-                  <svg className="w-4 h-4 text-green-500 mr-2 mt-0.5 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
+                  <svg className="w-5 h-5 text-green-500 mr-2 mt-0.5 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
                     <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
                   </svg>
-                  Request free mattress protector replacements
+                  <span className="text-gray-700">Request free mattress protector replacements</span>
                 </li>
                 <li className="flex items-start">
-                  <svg className="w-4 h-4 text-green-500 mr-2 mt-0.5 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
+                  <svg className="w-5 h-5 text-green-500 mr-2 mt-0.5 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
                     <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
                   </svg>
-                  Schedule free delivery and setup
+                  <span className="text-gray-700">Schedule free delivery and setup</span>
                 </li>
               </ul>
             </div>
@@ -94,7 +92,7 @@ export default function PortalLogin() {
             {/* Login Form */}
             <form onSubmit={handleLogin} className="space-y-6">
               <div>
-                <label htmlFor="email" className="block text-sm font-medium text-gray-700 mb-1">
+                <label htmlFor="email" className="block text-sm font-medium text-gray-700 mb-2">
                   Member Email Address
                 </label>
                 <input
@@ -102,7 +100,7 @@ export default function PortalLogin() {
                   id="email"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
-                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#00bcd4] focus:border-transparent transition-all"
+                  className="w-full"
                   placeholder="Enter your email"
                   required
                 />
@@ -117,17 +115,17 @@ export default function PortalLogin() {
               <button
                 type="submit"
                 disabled={loading}
-                className="w-full la-button-primary text-base"
+                className={`w-full la-button-primary py-3 ${loading ? 'loading' : ''}`}
               >
                 {loading ? 'Accessing Portal...' : 'Access Member Portal'}
               </button>
             </form>
 
             {/* Footer Info */}
-            <div className="mt-6 text-center">
+            <div className="mt-8 pt-6 border-t border-gray-200 text-center">
               <p className="text-sm text-gray-600 mb-3">
                 Need help? Call us at{' '}
-                <a href="tel:1-800-MATTRESS" className="text-[#1e40af] font-semibold">
+                <a href="tel:1-800-MATTRESS" className="text-[#1e40af] font-bold hover:text-[#00bcd4] transition-colors">
                   1-800-MATTRESS
                 </a>
               </p>

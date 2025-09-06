@@ -57,114 +57,110 @@ export default function LoginPage() {
     <div className="min-h-screen bg-gray-50">
       <Navbar />
       
-      <div className="flex items-center justify-center py-8 md:py-12 px-4 sm:px-6 lg:px-8">
-        <div className="max-w-md w-full space-y-8 bg-white p-6 md:p-8 rounded-lg shadow-lg">
-          {/* Logo and Header */}
-          <div>
-            <div className="flex justify-center mb-4">
-              <div className="bg-[#00bcd4] text-white px-6 py-2 rounded-lg">
+      <div className="flex items-center justify-center py-12 px-4">
+        <div className="w-full max-w-md">
+          <div className="card animate-fadeIn">
+            {/* Logo and Header */}
+            <div className="text-center mb-8">
+              <div className="inline-block bg-[#00bcd4] text-white px-6 py-2 rounded-lg shadow-md mb-4">
                 <span className="text-2xl font-bold">LA</span>
               </div>
+              <h2 className="text-3xl font-bold text-[#1e40af]">
+                Welcome Back
+              </h2>
+              <p className="mt-2 text-gray-600">
+                Sign in to your LA Mattress Elite Sleep+ account
+              </p>
             </div>
-            <h2 className="text-center text-2xl md:text-3xl font-bold text-[#1e40af]">
-              Sign in to your account
-            </h2>
-            <p className="mt-2 text-center text-gray-600">
-              Welcome back to LA Mattress Elite Sleep+
-            </p>
-          </div>
-          
-          <form className="mt-8 space-y-6" onSubmit={handleSubmit}>
-            {error && (
-              <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg text-sm">
-                {error}
-              </div>
-            )}
+            
+            <form onSubmit={handleSubmit} className="space-y-6">
+              {error && (
+                <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg text-sm">
+                  {error}
+                </div>
+              )}
 
-            <div className="space-y-4">
-              <div>
-                <label htmlFor="email" className="block text-sm font-medium text-gray-700 mb-1">
-                  Email address
-                </label>
-                <input
-                  id="email"
-                  name="email"
-                  type="email"
-                  autoComplete="email"
-                  required
-                  className="appearance-none relative block w-full px-4 py-3 border border-gray-300 placeholder-gray-500 text-gray-900 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#00bcd4] focus:border-transparent transition-all"
-                  placeholder="Enter your email"
-                  value={formData.email}
-                  onChange={handleChange}
-                />
-              </div>
-              
-              <div>
-                <label htmlFor="password" className="block text-sm font-medium text-gray-700 mb-1">
-                  Password
-                </label>
-                <input
-                  id="password"
-                  name="password"
-                  type="password"
-                  autoComplete="current-password"
-                  required
-                  className="appearance-none relative block w-full px-4 py-3 border border-gray-300 placeholder-gray-500 text-gray-900 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#00bcd4] focus:border-transparent transition-all"
-                  placeholder="Enter your password"
-                  value={formData.password}
-                  onChange={handleChange}
-                />
-              </div>
-            </div>
-
-            <div className="flex items-center justify-between">
-              <div className="flex items-center">
-                <input
-                  id="remember-me"
-                  name="remember-me"
-                  type="checkbox"
-                  className="h-4 w-4 text-[#1e40af] focus:ring-[#00bcd4] border-gray-300 rounded"
-                />
-                <label htmlFor="remember-me" className="ml-2 block text-sm text-gray-700">
-                  Remember me
-                </label>
+              <div className="space-y-4">
+                <div>
+                  <label htmlFor="email" className="block text-sm font-medium text-gray-700 mb-2">
+                    Email Address
+                  </label>
+                  <input
+                    id="email"
+                    name="email"
+                    type="email"
+                    autoComplete="email"
+                    required
+                    className="w-full"
+                    placeholder="Enter your email"
+                    value={formData.email}
+                    onChange={handleChange}
+                  />
+                </div>
+                
+                <div>
+                  <label htmlFor="password" className="block text-sm font-medium text-gray-700 mb-2">
+                    Password
+                  </label>
+                  <input
+                    id="password"
+                    name="password"
+                    type="password"
+                    autoComplete="current-password"
+                    required
+                    className="w-full"
+                    placeholder="Enter your password"
+                    value={formData.password}
+                    onChange={handleChange}
+                  />
+                </div>
               </div>
 
-              <div className="text-sm">
-                <a href="#" className="font-medium text-[#1e40af] hover:text-[#00bcd4] transition-colors">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center">
+                  <input
+                    id="remember-me"
+                    name="remember-me"
+                    type="checkbox"
+                    className="h-4 w-4 text-[#1e40af] focus:ring-[#00bcd4] border-gray-300 rounded"
+                  />
+                  <label htmlFor="remember-me" className="ml-2 block text-sm text-gray-700">
+                    Remember me
+                  </label>
+                </div>
+
+                <Link href="#" className="text-sm font-medium text-[#1e40af] hover:text-[#00bcd4] transition-colors">
                   Forgot password?
-                </a>
+                </Link>
               </div>
-            </div>
 
-            <div>
               <button
                 type="submit"
                 disabled={loading}
-                className="w-full py-3 px-4 border border-transparent text-base font-bold rounded-lg text-[#1e40af] bg-[#ffd700] hover:bg-[#ffed4a] focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[#ffd700] transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+                className={`w-full la-button-primary py-3 ${loading ? 'loading' : ''}`}
               >
-                {loading ? 'Signing in...' : 'Sign in'}
+                {loading ? 'Signing in...' : 'Sign In'}
               </button>
-            </div>
+            </form>
 
-            <div className="text-center">
-              <span className="text-sm text-gray-600">
+            <div className="mt-6 text-center">
+              <p className="text-sm text-gray-600">
                 Don't have an account?{' '}
                 <Link href="/register" className="font-medium text-[#1e40af] hover:text-[#00bcd4] transition-colors">
                   Sign up for Elite Sleep+
                 </Link>
-              </span>
+              </p>
             </div>
-          </form>
 
-          {/* Additional Info */}
-          <div className="mt-6 text-center text-xs text-gray-500">
-            <p>By signing in, you agree to our</p>
-            <p>
-              <a href="#" className="text-[#1e40af] hover:underline">Terms of Service</a>
-              {' and '}
-              <a href="#" className="text-[#1e40af] hover:underline">Privacy Policy</a>
-            </p>
+            {/* Footer */}
+            <div className="mt-8 pt-6 border-t border-gray-200 text-center">
+              <p className="text-xs text-gray-500">
+                By signing in, you agree to our{' '}
+                <Link href="#" className="text-[#1e40af] hover:underline">Terms of Service</Link>
+                {' and '}
+                <Link href="#" className="text-[#1e40af] hover:underline">Privacy Policy</Link>
+              </p>
+            </div>
           </div>
         </div>
       </div>

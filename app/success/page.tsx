@@ -3,6 +3,7 @@
 import { useEffect, useState, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
+import Navbar from '@/components/Navbar';
 
 function SuccessPageContent() {
   const router = useRouter();
@@ -23,62 +24,101 @@ function SuccessPageContent() {
   }, [searchParams]);
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-green-50 to-green-100 flex items-center justify-center">
-      <div className="max-w-md w-full bg-white rounded-lg shadow-lg p-8">
-        {loading ? (
-          <div className="text-center">
-            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-green-600 mx-auto"></div>
-            <p className="mt-4 text-gray-600">Processing your subscription...</p>
-          </div>
-        ) : (
-          <div className="text-center">
-            <div className="mx-auto flex items-center justify-center h-12 w-12 rounded-full bg-green-100">
-              <svg
-                className="h-6 w-6 text-green-600"
-                fill="none"
-                stroke="currentColor"
-                viewBox="0 0 24 24"
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={2}
-                  d="M5 13l4 4L19 7"
-                />
-              </svg>
-            </div>
-            
-            <h2 className="mt-4 text-2xl font-bold text-gray-900">
-              Payment Successful!
-            </h2>
-            
-            <p className="mt-2 text-gray-600">
-              Your subscription has been activated successfully.
-            </p>
-            
-            <div className="mt-6 space-y-3">
-              <Link
-                href="/dashboard"
-                className="block w-full bg-purple-600 text-white px-4 py-2 rounded-lg hover:bg-purple-700 transition-colors"
-              >
-                Go to Dashboard
-              </Link>
-              
-              <Link
-                href="/"
-                className="block w-full bg-gray-200 text-gray-800 px-4 py-2 rounded-lg hover:bg-gray-300 transition-colors"
-              >
-                Back to Home
-              </Link>
-            </div>
+    <div className="min-h-screen bg-gray-50">
+      <Navbar />
+      
+      <div className="flex items-center justify-center py-12 px-4">
+        <div className="w-full max-w-md">
+          <div className="card animate-fadeIn">
+            {loading ? (
+              <div className="text-center py-8">
+                <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[#00bcd4] mx-auto"></div>
+                <p className="mt-4 text-gray-600">Processing your subscription...</p>
+              </div>
+            ) : (
+              <div className="text-center py-8">
+                {/* Success Icon */}
+                <div className="mx-auto flex items-center justify-center h-16 w-16 rounded-full bg-green-100 mb-6">
+                  <svg
+                    className="h-8 w-8 text-green-600"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M5 13l4 4L19 7"
+                    />
+                  </svg>
+                </div>
+                
+                <h2 className="text-3xl font-bold text-[#1e40af] mb-4">
+                  Welcome to Elite Sleep+!
+                </h2>
+                
+                <p className="text-lg text-gray-600 mb-8">
+                  Your subscription has been activated successfully.
+                </p>
 
-            <div className="mt-8 pt-8 border-t border-gray-200">
-              <p className="text-sm text-gray-600">
-                You will receive a confirmation email shortly with your subscription details.
-              </p>
-            </div>
+                {/* Benefits Summary */}
+                <div className="bg-[#e3f2fd] rounded-lg p-6 mb-8 text-left">
+                  <h3 className="font-bold text-[#1e40af] mb-3">Your benefits are now active:</h3>
+                  <ul className="space-y-2 text-sm text-gray-700">
+                    <li className="flex items-center">
+                      <svg className="w-5 h-5 text-green-500 mr-2" fill="currentColor" viewBox="0 0 20 20">
+                        <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
+                      </svg>
+                      $15 monthly store credit
+                    </li>
+                    <li className="flex items-center">
+                      <svg className="w-5 h-5 text-green-500 mr-2" fill="currentColor" viewBox="0 0 20 20">
+                        <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
+                      </svg>
+                      Free delivery & setup on all orders
+                    </li>
+                    <li className="flex items-center">
+                      <svg className="w-5 h-5 text-green-500 mr-2" fill="currentColor" viewBox="0 0 20 20">
+                        <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
+                      </svg>
+                      Lifetime warranty protection
+                    </li>
+                  </ul>
+                </div>
+                
+                {/* Action Buttons */}
+                <div className="space-y-3">
+                  <Link
+                    href="/dashboard"
+                    className="block w-full la-button-primary py-3"
+                  >
+                    Go to Your Dashboard
+                  </Link>
+                  
+                  <Link
+                    href="/portal"
+                    className="block w-full la-button-secondary py-3"
+                  >
+                    Access Member Portal
+                  </Link>
+                </div>
+
+                <div className="mt-8 pt-6 border-t border-gray-200">
+                  <p className="text-sm text-gray-600">
+                    You'll receive a confirmation email shortly with your subscription details.
+                  </p>
+                  <p className="text-sm text-gray-600 mt-2">
+                    Questions? Call us at{' '}
+                    <a href="tel:1-800-MATTRESS" className="text-[#1e40af] font-semibold">
+                      1-800-MATTRESS
+                    </a>
+                  </p>
+                </div>
+              </div>
+            )}
           </div>
-        )}
+        </div>
       </div>
     </div>
   );
@@ -86,7 +126,17 @@ function SuccessPageContent() {
 
 export default function SuccessPage() {
   return (
-    <Suspense fallback={<div>Loading...</div>}>
+    <Suspense fallback={
+      <div className="min-h-screen bg-gray-50">
+        <Navbar />
+        <div className="flex items-center justify-center h-96">
+          <div className="text-center">
+            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[#00bcd4] mx-auto"></div>
+            <p className="mt-4 text-gray-600">Loading...</p>
+          </div>
+        </div>
+      </div>
+    }>
       <SuccessPageContent />
     </Suspense>
   );

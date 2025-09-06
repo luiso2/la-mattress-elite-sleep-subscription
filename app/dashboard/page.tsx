@@ -66,8 +66,8 @@ export default function DashboardPage() {
         <Navbar />
         <div className="flex items-center justify-center h-96">
           <div className="text-center">
-            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-purple-600 mx-auto"></div>
-            <p className="mt-4 text-gray-600">Loading...</p>
+            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[#00bcd4] mx-auto"></div>
+            <p className="mt-4 text-gray-600">Loading your dashboard...</p>
           </div>
         </div>
       </div>
@@ -78,68 +78,82 @@ export default function DashboardPage() {
     <div className="min-h-screen bg-gray-50">
       <Navbar />
       
-      <div className="max-w-7xl mx-auto px-4 py-8 sm:px-6 lg:px-8">
-        <h1 className="text-3xl font-bold text-gray-900 mb-8">Dashboard</h1>
+      <div className="container-mobile py-8">
+        <h1 className="text-3xl lg:text-4xl font-bold text-[#1e40af] mb-8">Welcome, {user?.name || 'Member'}!</h1>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
           {/* Profile Card */}
-          <div className="bg-white rounded-lg shadow p-6">
-            <h2 className="text-xl font-semibold mb-4">Profile Information</h2>
-            <div className="space-y-3">
-              <div>
-                <span className="text-gray-600">Name:</span>
-                <span className="ml-2 font-medium">{user?.name || 'Not set'}</span>
+          <div className="card">
+            <h2 className="text-xl font-bold text-[#1e40af] mb-4">Profile Information</h2>
+            <div className="space-y-4">
+              <div className="flex justify-between py-3 border-b border-gray-100">
+                <span className="text-gray-600">Name</span>
+                <span className="font-medium text-gray-800">{user?.name || 'Not set'}</span>
               </div>
-              <div>
-                <span className="text-gray-600">Email:</span>
-                <span className="ml-2 font-medium">{user?.email}</span>
+              <div className="flex justify-between py-3 border-b border-gray-100">
+                <span className="text-gray-600">Email</span>
+                <span className="font-medium text-gray-800">{user?.email}</span>
               </div>
-              <div>
-                <span className="text-gray-600">Customer ID:</span>
-                <span className="ml-2 font-mono text-sm">{user?.stripeCustomerId || 'Not set'}</span>
+              <div className="flex justify-between py-3 border-b border-gray-100">
+                <span className="text-gray-600">Member ID</span>
+                <span className="font-mono text-sm text-gray-800">{user?.stripeCustomerId || 'Not set'}</span>
+              </div>
+              <div className="flex justify-between py-3">
+                <span className="text-gray-600">Member Since</span>
+                <span className="font-medium text-gray-800">
+                  {user?.createdAt ? new Date(user.createdAt).toLocaleDateString() : 'N/A'}
+                </span>
               </div>
             </div>
           </div>
 
           {/* Subscription Card */}
-          <div className="bg-white rounded-lg shadow p-6">
-            <h2 className="text-xl font-semibold mb-4">Subscription Status</h2>
+          <div className="card">
+            <h2 className="text-xl font-bold text-[#1e40af] mb-4">Subscription Status</h2>
             {user?.subscription ? (
-              <div className="space-y-3">
-                <div>
-                  <span className="text-gray-600">Status:</span>
-                  <span className={`ml-2 px-2 py-1 rounded text-sm ${
+              <div className="space-y-4">
+                <div className="flex justify-between items-center py-3 border-b border-gray-100">
+                  <span className="text-gray-600">Status</span>
+                  <span className={`px-3 py-1 rounded-full text-sm font-semibold ${
                     user.subscription.status === 'active' 
-                      ? 'bg-green-100 text-green-800' 
-                      : 'bg-yellow-100 text-yellow-800'
+                      ? 'bg-green-100 text-green-700' 
+                      : 'bg-yellow-100 text-yellow-700'
                   }`}>
-                    {user.subscription.status}
+                    {user.subscription.status.charAt(0).toUpperCase() + user.subscription.status.slice(1)}
                   </span>
                 </div>
-                <div>
-                  <span className="text-gray-600">Current Period Ends:</span>
-                  <span className="ml-2 font-medium">
+                <div className="flex justify-between py-3 border-b border-gray-100">
+                  <span className="text-gray-600">Plan</span>
+                  <span className="font-medium text-gray-800">
+                    {user.subscription.planType?.charAt(0).toUpperCase() + user.subscription.planType?.slice(1) || 'Basic'} Sleep+
+                  </span>
+                </div>
+                <div className="flex justify-between py-3 border-b border-gray-100">
+                  <span className="text-gray-600">Renews On</span>
+                  <span className="font-medium text-gray-800">
                     {new Date(user.subscription.currentPeriodEnd).toLocaleDateString()}
                   </span>
                 </div>
                 {user.subscription.cancelAtPeriodEnd && (
-                  <div className="text-yellow-600">
-                    Subscription will cancel at period end
+                  <div className="bg-yellow-50 border border-yellow-200 p-3 rounded-lg">
+                    <p className="text-yellow-800 text-sm">
+                      Your subscription will cancel at the end of the current period
+                    </p>
                   </div>
                 )}
                 <button
                   onClick={handleManageBilling}
-                  className="mt-4 bg-purple-600 text-white px-4 py-2 rounded hover:bg-purple-700"
+                  className="w-full la-button-secondary py-3 mt-4"
                 >
                   Manage Billing
                 </button>
               </div>
             ) : (
-              <div>
-                <p className="text-gray-600 mb-4">No active subscription</p>
+              <div className="text-center py-8">
+                <p className="text-gray-600 mb-6">No active subscription</p>
                 <button
                   onClick={() => router.push('/pricing')}
-                  className="bg-purple-600 text-white px-4 py-2 rounded hover:bg-purple-700"
+                  className="la-button-primary"
                 >
                   Choose a Plan
                 </button>
@@ -148,44 +162,59 @@ export default function DashboardPage() {
           </div>
         </div>
 
-        {/* Sleep Stats Placeholder */}
-        <div className="mt-8 bg-white rounded-lg shadow p-6">
-          <h2 className="text-xl font-semibold mb-4">Sleep Statistics</h2>
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-            <div className="text-center p-4 bg-purple-50 rounded">
-              <div className="text-3xl font-bold text-purple-600">7.5h</div>
-              <div className="text-gray-600">Avg Sleep</div>
+        {/* Member Benefits */}
+        <div className="mt-8 card">
+          <h2 className="text-xl font-bold text-[#1e40af] mb-6">Your Member Benefits</h2>
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+            <div className="text-center p-6 bg-[#e3f2fd] rounded-lg">
+              <div className="text-3xl font-bold text-[#1e40af]">$180</div>
+              <div className="text-gray-600 mt-1">Annual Credit</div>
             </div>
-            <div className="text-center p-4 bg-blue-50 rounded">
-              <div className="text-3xl font-bold text-blue-600">85%</div>
-              <div className="text-gray-600">Sleep Quality</div>
+            <div className="text-center p-6 bg-green-50 rounded-lg">
+              <div className="text-3xl font-bold text-green-600">Free</div>
+              <div className="text-gray-600 mt-1">Delivery & Setup</div>
             </div>
-            <div className="text-center p-4 bg-green-50 rounded">
-              <div className="text-3xl font-bold text-green-600">23</div>
-              <div className="text-gray-600">Nights Tracked</div>
+            <div className="text-center p-6 bg-yellow-50 rounded-lg">
+              <div className="text-3xl font-bold text-yellow-600">Lifetime</div>
+              <div className="text-gray-600 mt-1">Warranty</div>
             </div>
-            <div className="text-center p-4 bg-yellow-50 rounded">
-              <div className="text-3xl font-bold text-yellow-600">10:30pm</div>
-              <div className="text-gray-600">Avg Bedtime</div>
+            <div className="text-center p-6 bg-purple-50 rounded-lg">
+              <div className="text-3xl font-bold text-purple-600">3</div>
+              <div className="text-gray-600 mt-1">Free Protectors</div>
             </div>
           </div>
         </div>
 
         {/* Quick Actions */}
-        <div className="mt-8 bg-white rounded-lg shadow p-6">
-          <h2 className="text-xl font-semibold mb-4">Quick Actions</h2>
+        <div className="mt-8 card">
+          <h2 className="text-xl font-bold text-[#1e40af] mb-6">Quick Actions</h2>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            <button className="p-4 border-2 border-gray-200 rounded-lg hover:border-purple-600 transition-colors">
-              <div className="text-lg font-medium">Track Sleep</div>
-              <div className="text-sm text-gray-600">Start tonight's session</div>
+            <button 
+              onClick={() => router.push('/portal')}
+              className="p-6 border-2 border-gray-200 rounded-lg hover:border-[#00bcd4] hover:bg-[#e3f2fd] transition-all group"
+            >
+              <div className="text-lg font-semibold text-gray-800 group-hover:text-[#1e40af]">
+                Member Portal
+              </div>
+              <div className="text-sm text-gray-600 mt-1">
+                Access exclusive benefits
+              </div>
             </button>
-            <button className="p-4 border-2 border-gray-200 rounded-lg hover:border-purple-600 transition-colors">
-              <div className="text-lg font-medium">View Reports</div>
-              <div className="text-sm text-gray-600">See detailed analytics</div>
+            <button className="p-6 border-2 border-gray-200 rounded-lg hover:border-[#00bcd4] hover:bg-[#e3f2fd] transition-all group">
+              <div className="text-lg font-semibold text-gray-800 group-hover:text-[#1e40af]">
+                Shop Now
+              </div>
+              <div className="text-sm text-gray-600 mt-1">
+                Use your store credit
+              </div>
             </button>
-            <button className="p-4 border-2 border-gray-200 rounded-lg hover:border-purple-600 transition-colors">
-              <div className="text-lg font-medium">Sleep Tips</div>
-              <div className="text-sm text-gray-600">Personalized recommendations</div>
+            <button className="p-6 border-2 border-gray-200 rounded-lg hover:border-[#00bcd4] hover:bg-[#e3f2fd] transition-all group">
+              <div className="text-lg font-semibold text-gray-800 group-hover:text-[#1e40af]">
+                Support
+              </div>
+              <div className="text-sm text-gray-600 mt-1">
+                Get help 24/7
+              </div>
             </button>
           </div>
         </div>

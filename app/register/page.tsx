@@ -69,153 +69,151 @@ export default function RegisterPage() {
     <div className="min-h-screen bg-gray-50">
       <Navbar />
       
-      <div className="flex items-center justify-center py-8 md:py-12 px-4 sm:px-6 lg:px-8">
-        <div className="max-w-md w-full space-y-8 bg-white p-6 md:p-8 rounded-lg shadow-lg">
-          {/* Logo and Header */}
-          <div>
-            <div className="flex justify-center mb-4">
-              <div className="bg-[#00bcd4] text-white px-6 py-2 rounded-lg">
+      <div className="flex items-center justify-center py-12 px-4">
+        <div className="w-full max-w-md">
+          <div className="card animate-fadeIn">
+            {/* Logo and Header */}
+            <div className="text-center mb-8">
+              <div className="inline-block bg-[#00bcd4] text-white px-6 py-2 rounded-lg shadow-md mb-4">
                 <span className="text-2xl font-bold">LA</span>
               </div>
+              <h2 className="text-3xl font-bold text-[#1e40af]">
+                Create Your Account
+              </h2>
+              <p className="mt-2 text-gray-600">
+                Join LA Mattress Elite Sleep+ today
+              </p>
             </div>
-            <h2 className="text-center text-2xl md:text-3xl font-bold text-[#1e40af]">
-              Create your account
-            </h2>
-            <p className="mt-2 text-center text-gray-600">
-              Join LA Mattress Elite Sleep+ today
-            </p>
-          </div>
-          
-          <form className="mt-8 space-y-6" onSubmit={handleSubmit}>
-            {error && (
-              <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg text-sm">
-                {error}
-              </div>
-            )}
+            
+            <form onSubmit={handleSubmit} className="space-y-6">
+              {error && (
+                <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg text-sm">
+                  {error}
+                </div>
+              )}
 
-            <div className="space-y-4">
-              <div>
-                <label htmlFor="name" className="block text-sm font-medium text-gray-700 mb-1">
-                  Full Name
-                </label>
-                <input
-                  id="name"
-                  name="name"
-                  type="text"
-                  autoComplete="name"
-                  required
-                  className="appearance-none relative block w-full px-4 py-3 border border-gray-300 placeholder-gray-500 text-gray-900 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#00bcd4] focus:border-transparent transition-all"
-                  placeholder="Enter your full name"
-                  value={formData.name}
-                  onChange={handleChange}
-                />
+              <div className="space-y-4">
+                <div>
+                  <label htmlFor="name" className="block text-sm font-medium text-gray-700 mb-2">
+                    Full Name
+                  </label>
+                  <input
+                    id="name"
+                    name="name"
+                    type="text"
+                    autoComplete="name"
+                    required
+                    className="w-full"
+                    placeholder="Enter your full name"
+                    value={formData.name}
+                    onChange={handleChange}
+                  />
+                </div>
+                
+                <div>
+                  <label htmlFor="email" className="block text-sm font-medium text-gray-700 mb-2">
+                    Email Address
+                  </label>
+                  <input
+                    id="email"
+                    name="email"
+                    type="email"
+                    autoComplete="email"
+                    required
+                    className="w-full"
+                    placeholder="Enter your email"
+                    value={formData.email}
+                    onChange={handleChange}
+                  />
+                </div>
+                
+                <div>
+                  <label htmlFor="password" className="block text-sm font-medium text-gray-700 mb-2">
+                    Password
+                  </label>
+                  <input
+                    id="password"
+                    name="password"
+                    type="password"
+                    autoComplete="new-password"
+                    required
+                    className="w-full"
+                    placeholder="Create a password"
+                    value={formData.password}
+                    onChange={handleChange}
+                  />
+                </div>
+                
+                <div>
+                  <label htmlFor="confirmPassword" className="block text-sm font-medium text-gray-700 mb-2">
+                    Confirm Password
+                  </label>
+                  <input
+                    id="confirmPassword"
+                    name="confirmPassword"
+                    type="password"
+                    autoComplete="new-password"
+                    required
+                    className="w-full"
+                    placeholder="Confirm your password"
+                    value={formData.confirmPassword}
+                    onChange={handleChange}
+                  />
+                </div>
               </div>
-              
-              <div>
-                <label htmlFor="email" className="block text-sm font-medium text-gray-700 mb-1">
-                  Email Address
-                </label>
-                <input
-                  id="email"
-                  name="email"
-                  type="email"
-                  autoComplete="email"
-                  required
-                  className="appearance-none relative block w-full px-4 py-3 border border-gray-300 placeholder-gray-500 text-gray-900 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#00bcd4] focus:border-transparent transition-all"
-                  placeholder="Enter your email"
-                  value={formData.email}
-                  onChange={handleChange}
-                />
-              </div>
-              
-              <div>
-                <label htmlFor="password" className="block text-sm font-medium text-gray-700 mb-1">
-                  Password
-                </label>
-                <input
-                  id="password"
-                  name="password"
-                  type="password"
-                  autoComplete="new-password"
-                  required
-                  className="appearance-none relative block w-full px-4 py-3 border border-gray-300 placeholder-gray-500 text-gray-900 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#00bcd4] focus:border-transparent transition-all"
-                  placeholder="Create a password"
-                  value={formData.password}
-                  onChange={handleChange}
-                />
-              </div>
-              
-              <div>
-                <label htmlFor="confirmPassword" className="block text-sm font-medium text-gray-700 mb-1">
-                  Confirm Password
-                </label>
-                <input
-                  id="confirmPassword"
-                  name="confirmPassword"
-                  type="password"
-                  autoComplete="new-password"
-                  required
-                  className="appearance-none relative block w-full px-4 py-3 border border-gray-300 placeholder-gray-500 text-gray-900 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#00bcd4] focus:border-transparent transition-all"
-                  placeholder="Confirm your password"
-                  value={formData.confirmPassword}
-                  onChange={handleChange}
-                />
-              </div>
-            </div>
 
-            {/* Benefits */}
-            <div className="bg-[#e3f2fd] rounded-lg p-4 space-y-2">
-              <p className="text-sm font-semibold text-[#1e40af]">Your membership includes:</p>
-              <ul className="text-sm text-gray-700 space-y-1">
-                <li className="flex items-center">
-                  <svg className="w-4 h-4 text-green-500 mr-2" fill="currentColor" viewBox="0 0 20 20">
-                    <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
-                  </svg>
-                  14-day free trial
-                </li>
-                <li className="flex items-center">
-                  <svg className="w-4 h-4 text-green-500 mr-2" fill="currentColor" viewBox="0 0 20 20">
-                    <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
-                  </svg>
-                  Monthly store credits
-                </li>
-                <li className="flex items-center">
-                  <svg className="w-4 h-4 text-green-500 mr-2" fill="currentColor" viewBox="0 0 20 20">
-                    <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
-                  </svg>
-                  Exclusive member benefits
-                </li>
-              </ul>
-            </div>
+              {/* Benefits Preview */}
+              <div className="bg-[#e3f2fd] rounded-lg p-4">
+                <p className="text-sm font-semibold text-[#1e40af] mb-2">Your membership includes:</p>
+                <ul className="text-sm text-gray-700 space-y-1">
+                  <li className="flex items-center">
+                    <svg className="w-4 h-4 text-green-500 mr-2 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
+                      <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
+                    </svg>
+                    14-day free trial
+                  </li>
+                  <li className="flex items-center">
+                    <svg className="w-4 h-4 text-green-500 mr-2 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
+                      <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
+                    </svg>
+                    Monthly store credits
+                  </li>
+                  <li className="flex items-center">
+                    <svg className="w-4 h-4 text-green-500 mr-2 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
+                      <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
+                    </svg>
+                    Exclusive member benefits
+                  </li>
+                </ul>
+              </div>
 
-            <div>
               <button
                 type="submit"
                 disabled={loading}
-                className="w-full py-3 px-4 border border-transparent text-base font-bold rounded-lg text-[#1e40af] bg-[#ffd700] hover:bg-[#ffed4a] focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[#ffd700] transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+                className={`w-full la-button-primary py-3 ${loading ? 'loading' : ''}`}
               >
                 {loading ? 'Creating account...' : 'Create Account'}
               </button>
-            </div>
+            </form>
 
-            <div className="text-center">
-              <span className="text-sm text-gray-600">
+            <div className="mt-6 text-center">
+              <p className="text-sm text-gray-600">
                 Already have an account?{' '}
                 <Link href="/login" className="font-medium text-[#1e40af] hover:text-[#00bcd4] transition-colors">
                   Sign in here
                 </Link>
-              </span>
+              </p>
             </div>
-          </form>
 
-          {/* Additional Info */}
-          <div className="mt-6 text-center text-xs text-gray-500">
-            <p>By creating an account, you agree to our</p>
-            <p>
-              <a href="#" className="text-[#1e40af] hover:underline">Terms of Service</a>
-              {' and '}
-              <a href="#" className="text-[#1e40af] hover:underline">Privacy Policy</a>
-            </p>
+            {/* Footer */}
+            <div className="mt-8 pt-6 border-t border-gray-200 text-center">
+              <p className="text-xs text-gray-500">
+                By creating an account, you agree to our{' '}
+                <Link href="#" className="text-[#1e40af] hover:underline">Terms of Service</Link>
+                {' and '}
+                <Link href="#" className="text-[#1e40af] hover:underline">Privacy Policy</Link>
+              </p>
+            </div>
           </div>
         </div>
       </div>

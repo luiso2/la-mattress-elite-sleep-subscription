@@ -7,17 +7,12 @@
   --la-yellow: #ffd700;
   --la-background: #ffffff;
   --la-light-background: #e3f2fd;
-  --la-text-primary: #171717;
-  --la-text-secondary: #4b5563;
+  --la-text-primary: #0f172a;
+  --la-text-secondary: #475569;
+  --la-border: #e2e8f0;
   
   --background: var(--la-background);
   --foreground: var(--la-text-primary);
-}
-
-@theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: Arial, Helvetica, sans-serif;
 }
 
 * {
@@ -26,47 +21,59 @@
   box-sizing: border-box;
 }
 
+html {
+  font-size: 16px;
+  scroll-behavior: smooth;
+}
+
 body {
   background: var(--background);
   color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen', 'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue', sans-serif;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+  line-height: 1.5;
+  min-height: 100vh;
 }
 
-/* Mobile First Typography */
+/* Typography Reset and Base Styles */
 h1, h2, h3, h4, h5, h6 {
   font-weight: 700;
   line-height: 1.2;
   color: var(--la-dark-blue);
+  margin: 0;
 }
 
 h1 {
   font-size: 1.875rem; /* 30px */
+  font-weight: 800;
 }
 
 h2 {
   font-size: 1.5rem; /* 24px */
+  font-weight: 700;
 }
 
 h3 {
   font-size: 1.25rem; /* 20px */
+  font-weight: 600;
 }
 
 p {
   line-height: 1.6;
   font-size: 1rem; /* 16px */
   color: var(--la-text-secondary);
+  margin: 0;
 }
 
 /* Desktop Typography */
 @media (min-width: 768px) {
   h1 {
-    font-size: 2.5rem; /* 40px */
+    font-size: 3rem; /* 48px */
   }
   
   h2 {
-    font-size: 2rem; /* 32px */
+    font-size: 2.25rem; /* 36px */
   }
   
   h3 {
@@ -78,24 +85,41 @@ p {
   }
 }
 
+/* Links */
+a {
+  color: inherit;
+  text-decoration: none;
+}
+
+/* Button Base Styles */
+button {
+  font-family: inherit;
+  cursor: pointer;
+  border: none;
+  outline: none;
+}
+
 /* Utility Classes */
 .la-button-primary {
   background-color: var(--la-yellow);
   color: var(--la-dark-blue);
   font-weight: 700;
   padding: 0.875rem 2rem;
-  border-radius: 0.375rem;
+  border-radius: 0.5rem;
   transition: all 0.2s ease;
   text-align: center;
   display: inline-block;
   border: none;
   cursor: pointer;
   text-decoration: none;
+  font-size: 1rem;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.1);
 }
 
 .la-button-primary:hover {
   transform: translateY(-2px);
-  box-shadow: 0 4px 12px rgba(255, 215, 0, 0.3);
+  box-shadow: 0 4px 12px rgba(255, 215, 0, 0.4);
+  background-color: #ffed4a;
 }
 
 .la-button-secondary {
@@ -103,17 +127,21 @@ p {
   color: white;
   font-weight: 600;
   padding: 0.75rem 1.5rem;
-  border-radius: 0.375rem;
+  border-radius: 0.5rem;
   transition: all 0.2s ease;
   text-align: center;
   display: inline-block;
   border: none;
   cursor: pointer;
   text-decoration: none;
+  font-size: 1rem;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.1);
 }
 
 .la-button-secondary:hover {
   background-color: #1e3a8a;
+  transform: translateY(-1px);
+  box-shadow: 0 4px 8px rgba(30, 64, 175, 0.3);
 }
 
 /* Container Responsive */
@@ -136,8 +164,52 @@ p {
   .container-mobile {
     padding-left: 2rem;
     padding-right: 2rem;
+  }
+}
+
+@media (min-width: 1024px) {
+  .container-mobile {
     max-width: 1280px;
   }
+}
+
+/* Card Styles */
+.card {
+  background: white;
+  border-radius: 1rem;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.07);
+  padding: 1.5rem;
+  border: 1px solid var(--la-border);
+}
+
+@media (min-width: 768px) {
+  .card {
+    padding: 2rem;
+  }
+}
+
+/* Form Styles */
+input[type="text"],
+input[type="email"],
+input[type="password"],
+input[type="tel"],
+select,
+textarea {
+  width: 100%;
+  padding: 0.75rem 1rem;
+  border: 1px solid var(--la-border);
+  border-radius: 0.5rem;
+  font-size: 1rem;
+  transition: all 0.2s ease;
+  font-family: inherit;
+}
+
+input:focus,
+select:focus,
+textarea:focus {
+  outline: none;
+  border-color: var(--la-light-blue);
+  box-shadow: 0 0 0 3px rgba(0, 188, 212, 0.1);
 }
 
 /* Price Badge */
@@ -148,12 +220,54 @@ p {
   border-radius: 9999px;
   font-weight: 600;
   font-size: 0.875rem;
+  display: inline-block;
 }
 
-/* Dark mode disabled for brand consistency */
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: var(--la-background);
-    --foreground: var(--la-text-primary);
+/* Loading States */
+.loading {
+  opacity: 0.5;
+  pointer-events: none;
+  cursor: not-allowed;
+}
+
+/* Animations */
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
   }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.animate-fadeIn {
+  animation: fadeIn 0.3s ease-out;
+}
+
+/* Fix for overlapping elements */
+.z-10 {
+  z-index: 10;
+}
+
+.z-20 {
+  z-index: 20;
+}
+
+.z-30 {
+  z-index: 30;
+}
+
+.z-40 {
+  z-index: 40;
+}
+
+.z-50 {
+  z-index: 50;
+}
+
+/* Ensure proper text rendering */
+.text-balance {
+  text-wrap: balance;
 }
