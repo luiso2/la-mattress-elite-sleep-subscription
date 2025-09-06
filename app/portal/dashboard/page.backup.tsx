@@ -40,28 +40,15 @@ export default function PortalDashboard() {
   const [showReserveModal, setShowReserveModal] = useState(false);
   const [reserveAmount, setReserveAmount] = useState('');
   const [reserveLoading, setReserveLoading] = useState(false);
-  // Add a state to store the token
-  const [portalToken, setPortalToken] = useState<string | null>(null);
 
   useEffect(() => {
-    // Get token on mount and store it in state
-    const token = localStorage.getItem('portal_token');
-    if (token) {
-      setPortalToken(token);
-      console.log('Token loaded from localStorage:', token.substring(0, 20) + '...');
-    } else {
-      console.log('No token found in localStorage');
-      router.push('/portal');
-      return;
-    }
     loadPortalData();
-  }, [router]);
+  }, []);
 
   const loadPortalData = async () => {
     try {
-      // Use the token from state or try to get it again
-      const token = portalToken || localStorage.getItem('portal_token');
-      console.log('Dashboard - Loading with token:', token ? 'Token exists' : 'Token is null');
+      const token = localStorage.getItem('portal_token');
+      console.log('Dashboard - Loading token from localStorage:', token ? 'Token exists' : 'Token is null');
       
       if (!token) {
         console.log('No token found, redirecting to login');
@@ -78,7 +65,6 @@ export default function PortalDashboard() {
       if (!res.ok) {
         if (res.status === 401) {
           localStorage.removeItem('portal_token');
-          setPortalToken(null);
           router.push('/portal');
           return;
         }
@@ -125,28 +111,10 @@ export default function PortalDashboard() {
 
     setReserveLoading(true);
     try {
-      // Try multiple methods to get the token
-      let token = portalToken;
+      const token = localStorage.getItem('portal_token');
       
-      // If not in state, try localStorage again
-      if (!token) {
-        console.log('Token not in state, checking localStorage...');
-        token = localStorage.getItem('portal_token');
-      }
-      
-      // Also try with window.localStorage explicitly
-      if (!token && typeof window !== 'undefined') {
-        console.log('Trying window.localStorage...');
-        token = window.localStorage.getItem('portal_token');
-      }
-      
-      // Debug log with more details
-      console.log('Reserve Credits - Token check:', {
-        fromState: portalToken ? 'exists' : 'null',
-        fromLocalStorage: token ? 'exists' : 'null',
-        tokenPrefix: token ? token.substring(0, 20) : 'null',
-        allKeys: typeof window !== 'undefined' ? Object.keys(window.localStorage) : []
-      });
+      // Debug log
+      console.log('Token from localStorage:', token ? 'Token exists' : 'Token is null');
       
       if (!token) {
         alert('Session expired. Please login again.');
@@ -154,25 +122,16 @@ export default function PortalDashboard() {
         return;
       }
       
-      // Make sure we're using the correct headers
-      const headers = {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${token}`,
-      };
-      
-      console.log('Sending request with headers:', {
-        'Content-Type': headers['Content-Type'],
-        'Authorization': headers['Authorization'].substring(0, 30) + '...'
-      });
-      
       const response = await fetch('/api/credits/reserve', {
         method: 'POST',
-        headers: headers,
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`,
+        },
         body: JSON.stringify({ amount }),
       });
 
       const result = await response.json();
-      console.log('Reserve response:', response.status, result);
 
       if (response.ok && result.success) {
         alert(`Successfully reserved $${amount} for in-store use!`);
@@ -181,11 +140,9 @@ export default function PortalDashboard() {
         // Reload data to show updated credits
         await loadPortalData();
       } else {
-        console.error('Reserve failed:', result);
         alert(result.error || 'Failed to reserve credits');
       }
     } catch (error) {
-      console.error('Reserve error:', error);
       alert('An error occurred. Please try again.');
     } finally {
       setReserveLoading(false);
@@ -195,7 +152,7 @@ export default function PortalDashboard() {
   if (loading) {
     return (
       <div className="min-h-screen bg-gray-50">
-        <NavbarAuth customerName="" />
+        <Navbar />
         <div className="flex items-center justify-center h-96">
           <div className="text-center">
             <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[#00bcd4] mx-auto"></div>
@@ -209,7 +166,7 @@ export default function PortalDashboard() {
   if (error || !data) {
     return (
       <div className="min-h-screen bg-gray-50">
-        <NavbarAuth customerName="" />
+        <Navbar />
         <div className="container-mobile py-12">
           <div className="card max-w-md mx-auto text-center">
             <p className="text-red-600 mb-4">{error || 'Unable to load portal data'}</p>
@@ -255,8 +212,6 @@ export default function PortalDashboard() {
       </div>
       
       <div className="container-mobile py-8">
-
-
         {/* Status Message */}
         {!isSubscriptionActive && (
           <div className="bg-red-50 border border-red-200 rounded-lg p-6 mb-8 text-center">
@@ -267,9 +222,12 @@ export default function PortalDashboard() {
               Reactivate your membership to regain access to all benefits including monthly store credit, 
               free delivery, and lifetime warranty protection.
             </p>
-            <p className="text-sm text-gray-600 italic">
-              Please contact our store at <strong>1-800-218-3578</strong> to reactivate your membership.
-            </p>
+            <button
+              onClick={() => router.push('/pricing')}
+              className="la-button text-lg px-8 py-3"
+            >
+              Reactivate Membership
+            </button>
           </div>
         )}
 
@@ -532,10 +490,12 @@ export default function PortalDashboard() {
             <p className="mb-6 text-white/90">
               Get instant access to $180 in annual store credit, free delivery, and lifetime warranty protection.
             </p>
-            <div className="space-y-3">
-              <p className="font-bold text-2xl">Call Now: 1-800-218-3578</p>
-              <p className="text-white/90">Speak with our team to reactivate your membership</p>
-            </div>
+            <button
+              onClick={() => router.push('/pricing')}
+              className="bg-[#ffd700] text-[#1e40af] hover:bg-yellow-400 px-8 py-4 rounded-lg font-bold text-lg transition-colors"
+            >
+              View Membership Options
+            </button>
           </div>
         )}
 

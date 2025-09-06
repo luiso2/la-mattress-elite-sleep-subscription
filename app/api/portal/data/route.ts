@@ -112,14 +112,16 @@ export async function GET(request: NextRequest) {
       const totalPayments = subscriptionInvoices.length;
       const totalCredits = totalPayments * creditsPerPayment;
       
-      // For credits used, check customer metadata (or default to 0)
+      // For credits used and reserved, check customer metadata (or default to 0)
       const customerMetadata = (customer as any).metadata || {};
       const creditsUsed = parseInt(customerMetadata.credits_used || '0');
+      const creditsReserved = parseInt(customerMetadata.credits_reserved || '0');
       
       const credits = {
-        available: totalCredits - creditsUsed,
+        available: totalCredits - creditsUsed - creditsReserved,
         monthly: creditsPerPayment,
         used: creditsUsed,
+        reserved: creditsReserved,
         total: totalCredits,
       };
 

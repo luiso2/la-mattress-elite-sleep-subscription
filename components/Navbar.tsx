@@ -1,45 +1,10 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import Link from 'next/link';
 
 export default function Navbar() {
-  const [isAuthenticated, setIsAuthenticated] = useState(false);
-  const [user, setUser] = useState<any>(null);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
-
-  useEffect(() => {
-    // Check if user is authenticated
-    const token = localStorage.getItem('token');
-    if (token) {
-      setIsAuthenticated(true);
-      // Fetch user data
-      fetchUserData(token);
-    }
-  }, []);
-
-  const fetchUserData = async (token: string) => {
-    try {
-      const response = await fetch('/api/auth/me', {
-        headers: {
-          'Authorization': `Bearer ${token}`,
-        },
-      });
-      if (response.ok) {
-        const data = await response.json();
-        setUser(data.data.user);
-      }
-    } catch (error) {
-      console.error('Failed to fetch user data:', error);
-    }
-  };
-
-  const handleLogout = () => {
-    localStorage.removeItem('token');
-    setIsAuthenticated(false);
-    setUser(null);
-    window.location.href = '/';
-  };
 
   return (
     <nav className="bg-white shadow-lg sticky top-0 z-50">
@@ -52,47 +17,38 @@ export default function Navbar() {
               src="/logo.png" 
               alt="LA MATTRESS" 
               className="h-12 w-auto"
+              onError={(e) => {
+                // Si no hay logo, mostrar texto
+                e.currentTarget.style.display = 'none';
+                const textLogo = document.createElement('div');
+                textLogo.className = 'text-2xl font-bold text-[#1e40af]';
+                textLogo.textContent = 'LA MATTRESS';
+                e.currentTarget.parentElement?.appendChild(textLogo);
+              }}
             />
           </Link>
           
           {/* Desktop Navigation */}
           <div className="hidden md:flex items-center space-x-6 lg:space-x-8">
             <Link 
-              href="/portal" 
+              href="/" 
               className="text-gray-700 hover:text-[#1e40af] font-medium transition-colors duration-200"
             >
-              Member Portal
+              Home
             </Link>
-            
-            {isAuthenticated ? (
-              <>
-                <Link 
-                  href="/dashboard" 
-                  className="text-gray-700 hover:text-[#1e40af] font-medium transition-colors duration-200"
-                >
-                  Dashboard
-                </Link>
-                <Link 
-                  href="/billing" 
-                  className="text-gray-700 hover:text-[#1e40af] font-medium transition-colors duration-200"
-                >
-                  Billing
-                </Link>
-                <button
-                  onClick={handleLogout}
-                  className="bg-red-500 text-white px-6 py-2.5 rounded-lg hover:bg-red-600 transition-colors font-medium shadow-sm hover:shadow-md"
-                >
-                  Logout
-                </button>
-              </>
-            ) : (
-              <Link
-                href="/login"
-                className="bg-[#ffd700] hover:bg-[#ffed4a] text-[#1e40af] font-bold px-6 py-2.5 rounded-lg transition-all shadow-md hover:shadow-lg transform hover:-translate-y-0.5"
-              >
-                Login
-              </Link>
-            )}
+            <Link 
+              href="/portal" 
+              className="bg-[#ffd700] hover:bg-[#ffed4a] text-[#1e40af] font-bold px-6 py-2.5 rounded-lg transition-all shadow-md hover:shadow-lg transform hover:-translate-y-0.5"
+            >
+              Access Member Portal
+            </Link>
+            {/* Employee Access - Subtle Link */}
+            <Link 
+              href="/employee/login" 
+              className="text-gray-500 hover:text-gray-700 text-sm transition-colors duration-200"
+            >
+              Staff
+            </Link>
           </div>
 
           {/* Mobile Menu Button */}
@@ -131,51 +87,30 @@ export default function Navbar() {
           <div className="md:hidden border-t border-gray-100 py-4 animate-fadeIn">
             <div className="space-y-1">
               <Link
-                href="/portal"
+                href="/"
                 className="block text-gray-700 hover:text-[#1e40af] font-medium py-3 px-4 rounded-lg hover:bg-gray-50 transition-all"
                 onClick={() => setIsMobileMenuOpen(false)}
               >
-                Member Portal
+                Home
               </Link>
-              
-              {isAuthenticated ? (
-                <>
-                  <Link
-                    href="/dashboard"
-                    className="block text-gray-700 hover:text-[#1e40af] font-medium py-3 px-4 rounded-lg hover:bg-gray-50 transition-all"
-                    onClick={() => setIsMobileMenuOpen(false)}
-                  >
-                    Dashboard
-                  </Link>
-                  <Link
-                    href="/billing"
-                    className="block text-gray-700 hover:text-[#1e40af] font-medium py-3 px-4 rounded-lg hover:bg-gray-50 transition-all"
-                    onClick={() => setIsMobileMenuOpen(false)}
-                  >
-                    Billing
-                  </Link>
-                  <div className="pt-4 pb-2">
-                    <button
-                      onClick={handleLogout}
-                      className="w-full bg-red-500 text-white px-4 py-3 rounded-lg hover:bg-red-600 transition-colors font-medium shadow-sm"
-                    >
-                      Logout
-                    </button>
-                  </div>
-                </>
-              ) : (
-                <>
-                  <div className="pt-4 pb-2">
-                    <Link
-                      href="/login"
-                      className="block w-full bg-[#ffd700] hover:bg-[#ffed4a] text-[#1e40af] font-bold text-center py-3 px-4 rounded-lg transition-all shadow-md"
-                      onClick={() => setIsMobileMenuOpen(false)}
-                    >
-                      Login
-                    </Link>
-                  </div>
-                </>
-              )}
+              <div className="pt-4 pb-2">
+                <Link
+                  href="/portal"
+                  className="block w-full bg-[#ffd700] hover:bg-[#ffed4a] text-[#1e40af] font-bold text-center py-3 px-4 rounded-lg transition-all shadow-md"
+                  onClick={() => setIsMobileMenuOpen(false)}
+                >
+                  Access Member Portal
+                </Link>
+              </div>
+              <div className="pt-2 pb-2 border-t border-gray-100">
+                <Link
+                  href="/employee/login"
+                  className="block text-gray-500 hover:text-gray-700 text-sm text-center py-2"
+                  onClick={() => setIsMobileMenuOpen(false)}
+                >
+                  Employee Access
+                </Link>
+              </div>
             </div>
           </div>
         )}

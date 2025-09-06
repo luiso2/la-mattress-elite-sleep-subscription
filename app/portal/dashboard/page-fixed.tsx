@@ -255,7 +255,15 @@ export default function PortalDashboard() {
       </div>
       
       <div className="container-mobile py-8">
-
+        {/* Debug Info - Remove in production */}
+        {process.env.NODE_ENV === 'development' && (
+          <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4 mb-4 text-xs">
+            <p className="font-bold mb-2">Debug Info:</p>
+            <p>Token in state: {portalToken ? 'Yes' : 'No'}</p>
+            <p>Token in localStorage: {typeof window !== 'undefined' && window.localStorage.getItem('portal_token') ? 'Yes' : 'No'}</p>
+            <p>Credits available: ${data.credits.available}</p>
+          </div>
+        )}
 
         {/* Status Message */}
         {!isSubscriptionActive && (
@@ -267,9 +275,12 @@ export default function PortalDashboard() {
               Reactivate your membership to regain access to all benefits including monthly store credit, 
               free delivery, and lifetime warranty protection.
             </p>
-            <p className="text-sm text-gray-600 italic">
-              Please contact our store at <strong>1-800-218-3578</strong> to reactivate your membership.
-            </p>
+            <button
+              onClick={() => router.push('/pricing')}
+              className="la-button text-lg px-8 py-3"
+            >
+              Reactivate Membership
+            </button>
           </div>
         )}
 
@@ -532,10 +543,12 @@ export default function PortalDashboard() {
             <p className="mb-6 text-white/90">
               Get instant access to $180 in annual store credit, free delivery, and lifetime warranty protection.
             </p>
-            <div className="space-y-3">
-              <p className="font-bold text-2xl">Call Now: 1-800-218-3578</p>
-              <p className="text-white/90">Speak with our team to reactivate your membership</p>
-            </div>
+            <button
+              onClick={() => router.push('/pricing')}
+              className="bg-[#ffd700] text-[#1e40af] hover:bg-yellow-400 px-8 py-4 rounded-lg font-bold text-lg transition-colors"
+            >
+              View Membership Options
+            </button>
           </div>
         )}
 

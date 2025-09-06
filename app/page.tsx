@@ -62,12 +62,23 @@ export default function Home() {
                 </div>
               </div>
 
-              {/* CTA Buttons */}
+              {/* CTA Button - Amarillo con texto azul */}
               <div className="flex flex-col sm:flex-row gap-4 justify-center lg:justify-start">
-                <Link href="/portal" className="la-button-primary text-lg px-8 py-4 inline-block text-center">
+                <Link 
+                  href="/portal" 
+                  className="bg-[#ffd700] hover:bg-[#ffed4a] text-[#1e40af] font-bold text-lg px-8 py-4 rounded-lg shadow-lg hover:shadow-xl transform hover:-translate-y-0.5 transition-all inline-flex items-center justify-center"
+                >
+                  <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 7a2 2 0 012 2m4 0a6 6 0 01-7.743 5.743L11 17H9v2H7v2H4a1 1 0 01-1-1v-2.586a1 1 0 01.293-.707l5.964-5.964A6 6 0 1121 9z" />
+                  </svg>
                   Access Member Portal
                 </Link>
               </div>
+
+              {/* Help Text */}
+              <p className="mt-6 text-sm text-gray-500 text-center lg:text-left">
+                Already a member? Click the button above to login and manage your benefits.
+              </p>
             </div>
             
             {/* Right Card */}

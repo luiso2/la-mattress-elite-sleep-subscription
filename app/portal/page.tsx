@@ -29,7 +29,19 @@ export default function PortalLogin() {
       }
 
       // Store the token
-      localStorage.setItem('portal_token', data.token);
+      console.log('Login successful, storing token:', data.token ? 'Token received' : 'No token received');
+      
+      if (data.token) {
+        localStorage.setItem('portal_token', data.token);
+        console.log('Token stored in localStorage');
+        
+        // Verify it was saved
+        const savedToken = localStorage.getItem('portal_token');
+        console.log('Verification - Token in localStorage:', savedToken ? 'Exists' : 'Not found');
+      } else {
+        console.error('No token received from server');
+        throw new Error('No authentication token received');
+      }
       
       // Redirect to portal dashboard
       router.push('/portal/dashboard');
