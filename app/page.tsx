@@ -24,14 +24,32 @@ export default function Home() {
               </p>
               
               {/* Benefits List con más espaciado */}
-              <div className="space-y-5 mb-12 max-w-xl mx-auto lg:mx-0 bg-gray-50 rounded-xl p-6 lg:p-8">
-                <div className="flex items-center justify-center lg:justify-start">
+              <div className="mb-12 max-w-xl mx-auto lg:mx-0 bg-gray-50 rounded-xl p-6 lg:p-8">
+                <div className="flex items-center justify-center lg:justify-start mb-6">
                   <div className="flex-shrink-0 w-7 h-7 bg-green-500 rounded-full flex items-center justify-center mr-4">
                     <svg className="w-5 h-5 text-white" fill="currentColor" viewBox="0 0 20 20">
                       <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
                     </svg>
                   </div>
-                  <span className="text-lg font-medium text-gray-800">$180 in annual store credit</span>
+                  <div className="text-lg font-medium text-gray-800 leading-relaxed">$180 in annual store credit</div>
+                </div>
+                
+                <div className="flex items-center justify-center lg:justify-start mb-6">
+                  <div className="flex-shrink-0 w-7 h-7 bg-green-500 rounded-full flex items-center justify-center mr-4">
+                    <svg className="w-5 h-5 text-white" fill="currentColor" viewBox="0 0 20 20">
+                      <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
+                    </svg>
+                  </div>
+                  <div className="text-lg font-medium text-gray-800 leading-relaxed">Free delivery & setup</div>
+                </div>
+                
+                <div className="flex items-center justify-center lg:justify-start mb-6">
+                  <div className="flex-shrink-0 w-7 h-7 bg-green-500 rounded-full flex items-center justify-center mr-4">
+                    <svg className="w-5 h-5 text-white" fill="currentColor" viewBox="0 0 20 20">
+                      <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
+                    </svg>
+                  </div>
+                  <div className="text-lg font-medium text-gray-800 leading-relaxed">Lifetime warranty protection</div>
                 </div>
                 
                 <div className="flex items-center justify-center lg:justify-start">
@@ -40,25 +58,7 @@ export default function Home() {
                       <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
                     </svg>
                   </div>
-                  <span className="text-lg font-medium text-gray-800">Free delivery & setup</span>
-                </div>
-                
-                <div className="flex items-center justify-center lg:justify-start">
-                  <div className="flex-shrink-0 w-7 h-7 bg-green-500 rounded-full flex items-center justify-center mr-4">
-                    <svg className="w-5 h-5 text-white" fill="currentColor" viewBox="0 0 20 20">
-                      <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
-                    </svg>
-                  </div>
-                  <span className="text-lg font-medium text-gray-800">Lifetime warranty protection</span>
-                </div>
-                
-                <div className="flex items-center justify-center lg:justify-start">
-                  <div className="flex-shrink-0 w-7 h-7 bg-green-500 rounded-full flex items-center justify-center mr-4">
-                    <svg className="w-5 h-5 text-white" fill="currentColor" viewBox="0 0 20 20">
-                      <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
-                    </svg>
-                  </div>
-                  <span className="text-lg font-medium text-gray-800">3 free mattress protector replacements</span>
+                  <div className="text-lg font-medium text-gray-800 leading-relaxed">3 free mattress protector replacements</div>
                 </div>
               </div>
 

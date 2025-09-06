@@ -20,10 +20,6 @@
   box-sizing: border-box;
 }
 
-* {
-  margin: 0;
-}
-
 html {
   font-size: 16px;
   scroll-behavior: smooth;
@@ -56,7 +52,6 @@ h1, h2, h3, h4, h5, h6 {
   font-weight: 700;
   line-height: 1.2;
   color: var(--la-dark-blue);
-  margin-bottom: 0.5em;
 }
 
 h1 {
@@ -74,16 +69,7 @@ h3 {
   font-weight: 600;
 }
 
-p {
-  line-height: 1.6;
-  font-size: 1rem; /* 16px */
-  color: var(--la-text-secondary);
-  margin-bottom: 1em;
-}
-
-p:last-child {
-  margin-bottom: 0;
-}
+/* Removed global p styles - use Tailwind utilities instead */
 
 /* Desktop Typography */
 @media (min-width: 768px) {
@@ -99,9 +85,7 @@ p:last-child {
     font-size: 1.5rem; /* 24px */
   }
   
-  p {
-    font-size: 1.125rem; /* 18px */
-  }
+  /* Removed global p font size */
 }
 
 /* Links con mejor accesibilidad */
@@ -111,17 +95,10 @@ a {
   transition: color 0.2s ease;
 }
 
-a:hover {
-  text-decoration: underline;
-}
-
-/* Button Base Styles con padding adecuado */
+/* Button Base Styles */
 button {
   font-family: inherit;
   cursor: pointer;
-  border: none;
-  outline: none;
-  padding: 0.5rem 1rem;
   transition: all 0.2s ease;
 }
 
@@ -180,13 +157,11 @@ button {
   text-decoration: none;
 }
 
-/* Container Responsive con padding vertical */
+/* Container Responsive sin padding vertical por defecto */
 .container-mobile {
   width: 100%;
   padding-left: 1rem;
   padding-right: 1rem;
-  padding-top: 1.5rem;
-  padding-bottom: 1.5rem;
   margin-left: auto;
   margin-right: auto;
 }
@@ -202,8 +177,6 @@ button {
   .container-mobile {
     padding-left: 2rem;
     padding-right: 2rem;
-    padding-top: 2rem;
-    padding-bottom: 2rem;
   }
 }
 
@@ -356,30 +329,9 @@ img {
   color: white;
 }
 
-/* Espaciado de secciones */
-section {
-  padding-top: 3rem;
-  padding-bottom: 3rem;
-}
+/* Removed global section padding - use Tailwind utilities instead */
 
-@media (min-width: 768px) {
-  section {
-    padding-top: 5rem;
-    padding-bottom: 5rem;
-  }
-}
-
-/* Mejoras específicas para navegación */
-nav ul {
-  list-style: none;
-  padding: 0;
-  margin: 0;
-}
-
-nav a {
-  display: inline-block;
-  padding: 0.5rem 1rem;
-}
+/* Removed global nav styles - use Tailwind utilities instead */
 
 /* Fix para elementos del menú móvil */
 .mobile-menu-item {
