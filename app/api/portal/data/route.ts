@@ -84,11 +84,14 @@ export async function GET(request: NextRequest) {
             available: 0,
             monthly: 0,
             used: 0,
+            reserved: 0,
+            total: 0,
           },
           protectorReplacements: {
             available: 0,
             used: 0,
             total: 0,
+            protectors: [],
           },
           message: 'No active subscription. Visit the pricing page to subscribe.',
           showReactivateButton: true,
@@ -125,11 +128,26 @@ export async function GET(request: NextRequest) {
         total: totalCredits,
       };
 
-      // Protector replacements logic (can also be based on payments or metadata)
+      // Protector replacements logic - read from metadata
+      let protectorUsedCount = 0;
+      const protectorDetails = [];
+      
+      for (let i = 1; i <= 3; i++) {
+        const isUsed = customerMetadata[`protector_${i}_used`] === 'true';
+        if (isUsed) protectorUsedCount++;
+        
+        protectorDetails.push({
+          number: i,
+          used: isUsed,
+          date: customerMetadata[`protector_${i}_date`] || null,
+        });
+      }
+      
       const protectorReplacements = {
-        available: parseInt(customerMetadata.protector_available || '3'),
-        used: parseInt(customerMetadata.protector_used || '0'),
-        total: parseInt(customerMetadata.protector_total || '3'),
+        available: 3 - protectorUsedCount,
+        used: protectorUsedCount,
+        total: 3,
+        protectors: protectorDetails,
       };
       
       return NextResponse.json({
@@ -148,12 +166,14 @@ export async function GET(request: NextRequest) {
           available: credits.available,
           monthly: credits.monthly,
           used: credits.used,
+          reserved: credits.reserved,
           total: credits.total,
         },
         protectorReplacements: {
           available: protectorReplacements.available,
           used: protectorReplacements.used,
           total: protectorReplacements.total,
+          protectors: protectorReplacements.protectors,
         },
       });
     } catch (stripeError: any) {

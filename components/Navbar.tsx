@@ -31,12 +31,6 @@ export default function Navbar() {
           {/* Desktop Navigation */}
           <div className="hidden md:flex items-center space-x-6 lg:space-x-8">
             <Link 
-              href="/" 
-              className="text-gray-700 hover:text-[#1e40af] font-medium transition-colors duration-200"
-            >
-              Home
-            </Link>
-            <Link 
               href="/portal" 
               className="bg-[#ffd700] hover:bg-[#ffed4a] text-[#1e40af] font-bold px-6 py-2.5 rounded-lg transition-all shadow-md hover:shadow-lg transform hover:-translate-y-0.5"
             >
@@ -86,13 +80,6 @@ export default function Navbar() {
         {isMobileMenuOpen && (
           <div className="md:hidden border-t border-gray-100 py-4 animate-fadeIn">
             <div className="space-y-1">
-              <Link
-                href="/"
-                className="block text-gray-700 hover:text-[#1e40af] font-medium py-3 px-4 rounded-lg hover:bg-gray-50 transition-all"
-                onClick={() => setIsMobileMenuOpen(false)}
-              >
-                Home
-              </Link>
               <div className="pt-4 pb-2">
                 <Link
                   href="/portal"

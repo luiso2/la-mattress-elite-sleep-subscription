@@ -107,6 +107,21 @@ export async function POST(request: NextRequest) {
       }
     }
 
+    // Get protector replacements data
+    let protectorUsedCount = 0;
+    const protectorDetails = [];
+    
+    for (let i = 1; i <= 3; i++) {
+      const isUsed = customerMetadata[`protector_${i}_used`] === 'true';
+      if (isUsed) protectorUsedCount++;
+      
+      protectorDetails.push({
+        number: i,
+        used: isUsed,
+        date: customerMetadata[`protector_${i}_date`] || null,
+      });
+    }
+
     return NextResponse.json({
       success: true,
       data: {
@@ -120,6 +135,12 @@ export async function POST(request: NextRequest) {
           used: creditsUsed,
           reserved: creditsReserved,
           available: availableCredits,
+        },
+        protectorReplacements: {
+          total: 3,
+          used: protectorUsedCount,
+          available: 3 - protectorUsedCount,
+          protectors: protectorDetails,
         },
         lastTransaction,
       },

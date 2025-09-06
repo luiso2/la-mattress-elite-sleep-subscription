@@ -4,6 +4,12 @@ import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import NavbarAuth from '@/components/NavbarAuth';
 
+interface ProtectorReplacement {
+  number: number;
+  used: boolean;
+  date: string | null;
+}
+
 interface PortalData {
   customer: {
     name: string;
@@ -27,6 +33,7 @@ interface PortalData {
     available: number;
     used: number;
     total: number;
+    protectors?: ProtectorReplacement[];
   };
   message?: string;
   showReactivateButton?: boolean;
@@ -42,6 +49,10 @@ export default function PortalDashboard() {
   const [reserveLoading, setReserveLoading] = useState(false);
   // Add a state to store the token
   const [portalToken, setPortalToken] = useState<string | null>(null);
+  // States for protector claim
+  const [showProtectorModal, setShowProtectorModal] = useState(false);
+  const [selectedProtector, setSelectedProtector] = useState<number | null>(null);
+  const [protectorLoading, setProtectorLoading] = useState(false);
 
   useEffect(() => {
     // Get token on mount and store it in state
@@ -109,6 +120,47 @@ export default function PortalDashboard() {
       .join('')
       .toUpperCase()
       .slice(0, 2);
+  };
+
+  const handleClaimProtector = async () => {
+    if (!selectedProtector) return;
+    
+    setProtectorLoading(true);
+    try {
+      const token = portalToken || localStorage.getItem('portal_token');
+      
+      if (!token) {
+        alert('Session expired. Please login again.');
+        router.push('/portal');
+        return;
+      }
+      
+      const response = await fetch('/api/protector/claim', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`,
+        },
+        body: JSON.stringify({ protectorNumber: selectedProtector }),
+      });
+
+      const result = await response.json();
+      
+      if (response.ok && result.success) {
+        alert(result.message);
+        setShowProtectorModal(false);
+        setSelectedProtector(null);
+        // Reload data to show updated protector status
+        await loadPortalData();
+      } else {
+        alert(result.error || 'Failed to claim protector replacement');
+      }
+    } catch (error) {
+      console.error('Protector claim error:', error);
+      alert('An error occurred. Please try again.');
+    } finally {
+      setProtectorLoading(false);
+    }
   };
 
   const handleReserveCredits = async () => {
@@ -352,24 +404,53 @@ export default function PortalDashboard() {
             </div>
             
             <div className="space-y-3">
-              {[1, 2, 3].map((num) => (
-                <div key={num} className="flex justify-between items-center py-3 border-b border-gray-100">
-                  <span className="text-gray-700">Protector replacement #{num}</span>
-                  <span className={`px-3 py-1 rounded-full text-sm font-semibold ${
-                    !isSubscriptionActive 
-                      ? 'bg-gray-100 text-gray-500'
-                      : num <= data.protectorReplacements.used 
-                        ? 'bg-red-100 text-red-700' 
-                        : 'bg-green-100 text-green-700'
-                  }`}>
-                    {!isSubscriptionActive 
-                      ? 'Inactive' 
-                      : num <= data.protectorReplacements.used 
-                        ? 'Used' 
-                        : 'Available'}
-                  </span>
-                </div>
-              ))}
+              {data.protectorReplacements.protectors ? (
+                // Use actual protector data if available
+                data.protectorReplacements.protectors.map((protector) => (
+                  <div key={protector.number} className="flex justify-between items-center py-3 border-b border-gray-100">
+                    <span className="text-gray-700">Protector replacement #{protector.number}</span>
+                    {!isSubscriptionActive ? (
+                      <span className="px-3 py-1 rounded-full text-sm font-semibold bg-gray-100 text-gray-500">
+                        Inactive
+                      </span>
+                    ) : protector.used ? (
+                      <span className="px-3 py-1 rounded-full text-sm font-semibold bg-red-100 text-red-700">
+                        Used {protector.date ? `on ${new Date(protector.date).toLocaleDateString()}` : ''}
+                      </span>
+                    ) : (
+                      <button
+                        onClick={() => {
+                          setSelectedProtector(protector.number);
+                          setShowProtectorModal(true);
+                        }}
+                        className="px-4 py-1 bg-green-500 text-white rounded-full text-sm font-semibold hover:bg-green-600 transition-colors"
+                      >
+                        Claim
+                      </button>
+                    )}
+                  </div>
+                ))
+              ) : (
+                // Fallback to simple display if no detailed data
+                [1, 2, 3].map((num) => (
+                  <div key={num} className="flex justify-between items-center py-3 border-b border-gray-100">
+                    <span className="text-gray-700">Protector replacement #{num}</span>
+                    <span className={`px-3 py-1 rounded-full text-sm font-semibold ${
+                      !isSubscriptionActive 
+                        ? 'bg-gray-100 text-gray-500'
+                        : num <= data.protectorReplacements.used 
+                          ? 'bg-red-100 text-red-700' 
+                          : 'bg-green-100 text-green-700'
+                    }`}>
+                      {!isSubscriptionActive 
+                        ? 'Inactive' 
+                        : num <= data.protectorReplacements.used 
+                          ? 'Used' 
+                          : 'Available'}
+                    </span>
+                  </div>
+                ))
+              )}
             </div>
             
             <div className="mt-4">
@@ -383,9 +464,7 @@ export default function PortalDashboard() {
                   style={{ width: `${(data.protectorReplacements.used / (data.protectorReplacements.total || 1)) * 100}%` }}
                 />
               </div>
-              <p className="text-xs text-gray-600 mt-2">
-                ${(data.protectorReplacements.total - data.protectorReplacements.used) * 100} value remaining
-              </p>
+
             </div>
           </div>
           
@@ -540,6 +619,47 @@ export default function PortalDashboard() {
         )}
 
       </div>
+
+      {/* Protector Claim Modal */}
+      {showProtectorModal && selectedProtector && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-lg max-w-md w-full p-6">
+            <h3 className="text-2xl font-bold text-[#1e40af] mb-4">Claim Protector Replacement</h3>
+            
+            <div className="mb-6">
+              <p className="text-gray-600 mb-4">
+                You are about to claim protector replacement #{selectedProtector}.
+              </p>
+              
+              <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4">
+                <p className="text-sm text-yellow-800">
+                  <strong>Note:</strong> Once claimed, this action cannot be undone. The protector replacement will be processed and shipped to your registered address.
+                </p>
+              </div>
+            </div>
+            
+            <div className="flex gap-3">
+              <button
+                onClick={() => {
+                  setShowProtectorModal(false);
+                  setSelectedProtector(null);
+                }}
+                className="flex-1 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors"
+                disabled={protectorLoading}
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleClaimProtector}
+                className="flex-1 py-2 bg-green-500 text-white rounded-lg hover:bg-green-600 transition-colors disabled:opacity-50"
+                disabled={protectorLoading}
+              >
+                {protectorLoading ? 'Processing...' : 'Confirm Claim'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Reserve Credits Modal */}
       {showReserveModal && (

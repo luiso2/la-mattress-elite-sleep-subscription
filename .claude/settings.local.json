@@ -3,7 +3,8 @@
     "allow": [
       "Read(//mnt/c/**)",
       "Bash(npm run dev:*)",
-      "Bash(npm run build:*)"
+      "Bash(npm run build:*)",
+      "Bash(pkill:*)"
     ],
     "deny": [],
     "ask": []
