@@ -187,7 +187,7 @@ Email: `test@example.com`
 
 For issues or questions:
 - Email: support@lamattress.com
-- Phone: 1-800-MATTRESS
+- Phone: Call Now: 1-800-218-3578
 
 ## 📄 License
 

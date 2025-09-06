@@ -51,12 +51,8 @@ export default function Navbar() {
             <img 
               src="/logo.png" 
               alt="LA MATTRESS" 
-              className="h-12 w-auto mr-3"
+              className="h-12 w-auto"
             />
-            <div className="flex items-center">
-              <span className="text-3xl font-bold text-[#00bcd4]">LA</span>
-              <span className="text-3xl font-bold text-[#1e40af] ml-2">MATTRESS</span>
-            </div>
           </Link>
           
           {/* Desktop Navigation */}

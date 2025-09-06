@@ -188,8 +188,8 @@ export default function PricingPage() {
             
             <p className="text-gray-600 text-lg">
               Questions? Call us at{' '}
-              <a href="tel:1-800-MATTRESS" className="text-[#1e40af] font-bold hover:text-[#00bcd4] transition-colors">
-                1-800-MATTRESS
+              <a href="tel:1-800-218-3578" className="text-[#1e40af] font-bold hover:text-[#00bcd4] transition-colors">
+                  Call Now: 1-800-218-3578
               </a>{' '}
               or email{' '}
               <a href="mailto:support@lamattress.com" className="text-[#1e40af] font-bold hover:text-[#00bcd4] transition-colors">
