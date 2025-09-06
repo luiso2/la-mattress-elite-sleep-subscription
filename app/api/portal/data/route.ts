@@ -41,7 +41,7 @@ export async function GET(request: NextRequest) {
       );
     }
 
-    const { customerId, email, name, isDemo } = decoded;
+    const { customerId, email, name, isDemo, hasActiveSubscription } = decoded;
 
     // Handle demo mode
     if (isDemo || !getStripe()) {
@@ -83,31 +83,65 @@ export async function GET(request: NextRequest) {
       // Fetch active subscriptions
       const subscriptions = await stripeClient.subscriptions.list({
         customer: customerId,
-        status: 'active',
+        status: 'all',
         limit: 1,
       });
 
-      if (!subscriptions.data.length) {
-        return NextResponse.json(
-          { error: 'No active subscription found' },
-          { status: 404 }
-        );
+      const activeSubscriptions = subscriptions.data.filter(sub => 
+        ['active', 'trialing', 'past_due'].includes(sub.status)
+      );
+
+      // If no active subscription, return limited data
+      if (!activeSubscriptions.length) {
+        return NextResponse.json({
+          customer: {
+            name: name || (customer as any).name || 'Member',
+            email: (customer as any).email || email,
+            created: (customer as any).created ? new Date((customer as any).created * 1000).toISOString() : new Date().toISOString(),
+          },
+          subscription: {
+            status: 'inactive',
+            current_period_end: null,
+            cancel_at_period_end: false,
+          },
+          credits: {
+            available: 0,
+            monthly: 0,
+            used: 0,
+          },
+          protectorReplacements: {
+            available: 0,
+            used: 0,
+            total: 0,
+          },
+          message: 'No active subscription. Visit the pricing page to subscribe.',
+          showReactivateButton: true,
+        });
       }
 
-      const subscription = subscriptions.data[0];
+      const subscription = activeSubscriptions[0];
 
       // Calculate credits (for demonstration, we'll use metadata or default values)
       // In a real app, you'd track this in a database
       const currentMonth = new Date().getMonth();
       const subscriptionStartMonth = new Date(subscription.created * 1000).getMonth();
-      const monthsActive = currentMonth - subscriptionStartMonth + 1;
+      const monthsActive = Math.max(1, currentMonth - subscriptionStartMonth + 1);
       
-      // Simulated data - in production, this should come from a database
+      // Determine credits based on subscription plan
+      let monthlyCredits = 15; // Default
+      const priceId = subscription.items.data[0]?.price.id;
+      
+      // You can map price IDs to credit amounts here
+      // For example:
+      // if (priceId === 'price_basic') monthlyCredits = 10;
+      // if (priceId === 'price_premium') monthlyCredits = 15;
+      // if (priceId === 'price_enterprise') monthlyCredits = 25;
+      
       const credits = {
-        available: 15, // Current month's credit
-        monthly: 15,
+        available: monthlyCredits,
+        monthly: monthlyCredits,
         used: 0,
-        total: monthsActive * 15,
+        total: monthsActive * monthlyCredits,
       };
 
       const protectorReplacements = {
@@ -129,6 +163,7 @@ export async function GET(request: NextRequest) {
           status: subscription.status,
           current_period_end: subscription.current_period_end,
           cancel_at_period_end: subscription.cancel_at_period_end,
+          plan: subscription.items.data[0]?.price.nickname || 'Premium',
         },
         credits: {
           available: parseInt(customerMetadata.credits_available || credits.available.toString()),

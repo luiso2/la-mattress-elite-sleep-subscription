@@ -125,8 +125,8 @@ export default function PortalLogin() {
             <div className="mt-8 pt-6 border-t border-gray-200 text-center">
               <p className="text-sm text-gray-600 mb-3">
                 Need help? Call us at{' '}
-                <a href="tel:1-800-MATTRESS" className="text-[#1e40af] font-bold hover:text-[#00bcd4] transition-colors">
-                  1-800-MATTRESS
+                <a href="tel:1-800-218-3578" className="text-[#1e40af] font-bold hover:text-[#00bcd4] transition-colors">
+                  Call Now: 1-800-218-3578
                 </a>
               </p>
               <p className="text-xs text-gray-500">

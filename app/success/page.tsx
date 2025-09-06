@@ -110,8 +110,8 @@ function SuccessPageContent() {
                   </p>
                   <p className="text-sm text-gray-600 mt-2">
                     Questions? Call us at{' '}
-                    <a href="tel:1-800-MATTRESS" className="text-[#1e40af] font-semibold">
-                      1-800-MATTRESS
+                    <a href="tel:1-800-218-3578" className="text-[#1e40af] font-semibold">
+                  Call Now: 1-800-218-3578
                     </a>
                   </p>
                 </div>

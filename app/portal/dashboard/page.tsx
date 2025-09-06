@@ -12,8 +12,9 @@ interface PortalData {
   };
   subscription: {
     status: string;
-    current_period_end: number;
+    current_period_end: number | null;
     cancel_at_period_end: boolean;
+    plan?: string;
   };
   credits: {
     available: number;
@@ -25,6 +26,8 @@ interface PortalData {
     used: number;
     total: number;
   };
+  message?: string;
+  showReactivateButton?: boolean;
 }
 
 export default function PortalDashboard() {
@@ -119,6 +122,10 @@ export default function PortalDashboard() {
     );
   }
 
+  const isSubscriptionActive = data.subscription.status === 'active' || 
+                              data.subscription.status === 'trialing' || 
+                              data.subscription.status === 'past_due';
+
   return (
     <div className="min-h-screen bg-gray-50">
       <Navbar />
@@ -135,24 +142,48 @@ export default function PortalDashboard() {
             Welcome, {data.customer.name}!
           </h1>
           <p className="text-center text-white/90">
-            ✨ Active ELITE SLEEP+ Member since {new Date(data.customer.created).toLocaleDateString()}
+            {isSubscriptionActive ? (
+              <>✨ Active ELITE SLEEP+ Member since {new Date(data.customer.created).toLocaleDateString()}</>
+            ) : (
+              <>Customer since {new Date(data.customer.created).toLocaleDateString()}</>
+            )}
           </p>
         </div>
       </div>
       
       <div className="container-mobile py-8">
-        {/* Welcome Message */}
-        <div className="bg-[#ffd700] rounded-lg p-6 mb-8 shadow-md">
-          <p className="text-[#1e40af] font-bold text-lg flex items-center">
-            <span className="text-2xl mr-2">🎉</span>
-            Welcome to ELITE SLEEP+! Your membership is active and all benefits are available.
-          </p>
-        </div>
+        {/* Status Message */}
+        {!isSubscriptionActive && (
+          <div className="bg-red-50 border border-red-200 rounded-lg p-6 mb-8 text-center">
+            <p className="text-red-800 font-bold text-lg mb-4">
+              {data.message || 'Your ELITE SLEEP+ membership is currently inactive'}
+            </p>
+            <p className="text-gray-700 mb-6">
+              Reactivate your membership to regain access to all benefits including monthly store credit, 
+              free delivery, and lifetime warranty protection.
+            </p>
+            <button
+              onClick={() => router.push('/pricing')}
+              className="la-button text-lg px-8 py-3"
+            >
+              Reactivate Membership
+            </button>
+          </div>
+        )}
+
+        {isSubscriptionActive && (
+          <div className="bg-[#ffd700] rounded-lg p-6 mb-8 shadow-md">
+            <p className="text-[#1e40af] font-bold text-lg flex items-center">
+              <span className="text-2xl mr-2">🎉</span>
+              Welcome to ELITE SLEEP+! Your membership is active and all benefits are available.
+            </p>
+          </div>
+        )}
         
         {/* Benefits Grid */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
           {/* Available Credit */}
-          <div className="card">
+          <div className={`card ${!isSubscriptionActive ? 'opacity-60' : ''}`}>
             <div className="flex items-center mb-4">
               <div className="w-12 h-12 bg-green-500 rounded-lg flex items-center justify-center text-white text-2xl mr-4">
                 💰
@@ -176,15 +207,17 @@ export default function PortalDashboard() {
               </div>
             </div>
             
-            <div className="bg-[#e3f2fd] rounded-lg p-4 mt-4">
-              <p className="text-sm text-[#1e40af]">
-                <strong>Next month:</strong> You'll receive an additional ${data.credits.monthly}
-              </p>
-            </div>
+            {isSubscriptionActive && (
+              <div className="bg-[#e3f2fd] rounded-lg p-4 mt-4">
+                <p className="text-sm text-[#1e40af]">
+                  <strong>Next month:</strong> You'll receive an additional ${data.credits.monthly}
+                </p>
+              </div>
+            )}
           </div>
           
           {/* Mattress Protection */}
-          <div className="card">
+          <div className={`card ${!isSubscriptionActive ? 'opacity-60' : ''}`}>
             <div className="flex items-center mb-4">
               <div className="w-12 h-12 bg-red-500 rounded-lg flex items-center justify-center text-white text-2xl mr-4">
                 🛡️
@@ -197,11 +230,17 @@ export default function PortalDashboard() {
                 <div key={num} className="flex justify-between items-center py-3 border-b border-gray-100">
                   <span className="text-gray-700">Protector replacement #{num}</span>
                   <span className={`px-3 py-1 rounded-full text-sm font-semibold ${
-                    num <= data.protectorReplacements.used 
-                      ? 'bg-red-100 text-red-700' 
-                      : 'bg-green-100 text-green-700'
+                    !isSubscriptionActive 
+                      ? 'bg-gray-100 text-gray-500'
+                      : num <= data.protectorReplacements.used 
+                        ? 'bg-red-100 text-red-700' 
+                        : 'bg-green-100 text-green-700'
                   }`}>
-                    {num <= data.protectorReplacements.used ? 'Used' : 'Available'}
+                    {!isSubscriptionActive 
+                      ? 'Inactive' 
+                      : num <= data.protectorReplacements.used 
+                        ? 'Used' 
+                        : 'Available'}
                   </span>
                 </div>
               ))}
@@ -215,7 +254,7 @@ export default function PortalDashboard() {
               <div className="w-full h-4 bg-gray-200 rounded-full overflow-hidden">
                 <div 
                   className="h-full bg-gradient-to-r from-red-400 to-red-500 transition-all duration-500"
-                  style={{ width: `${(data.protectorReplacements.used / data.protectorReplacements.total) * 100}%` }}
+                  style={{ width: `${(data.protectorReplacements.used / (data.protectorReplacements.total || 1)) * 100}%` }}
                 />
               </div>
               <p className="text-xs text-gray-600 mt-2">
@@ -225,7 +264,7 @@ export default function PortalDashboard() {
           </div>
           
           {/* Delivery Services */}
-          <div className="card">
+          <div className={`card ${!isSubscriptionActive ? 'opacity-60' : ''}`}>
             <div className="flex items-center mb-4">
               <div className="w-12 h-12 bg-blue-500 rounded-lg flex items-center justify-center text-white text-2xl mr-4">
                 🚚
@@ -236,20 +275,32 @@ export default function PortalDashboard() {
             <ul className="space-y-3">
               <li className="flex justify-between items-center py-3 border-b border-gray-100">
                 <span className="text-gray-700">Free delivery</span>
-                <span className="px-3 py-1 bg-blue-100 text-blue-700 rounded-full text-sm font-semibold">
-                  Unlimited
+                <span className={`px-3 py-1 rounded-full text-sm font-semibold ${
+                  isSubscriptionActive 
+                    ? 'bg-blue-100 text-blue-700'
+                    : 'bg-gray-100 text-gray-500'
+                }`}>
+                  {isSubscriptionActive ? 'Unlimited' : 'Inactive'}
                 </span>
               </li>
               <li className="flex justify-between items-center py-3 border-b border-gray-100">
                 <span className="text-gray-700">Professional setup</span>
-                <span className="px-3 py-1 bg-blue-100 text-blue-700 rounded-full text-sm font-semibold">
-                  Included
+                <span className={`px-3 py-1 rounded-full text-sm font-semibold ${
+                  isSubscriptionActive 
+                    ? 'bg-blue-100 text-blue-700'
+                    : 'bg-gray-100 text-gray-500'
+                }`}>
+                  {isSubscriptionActive ? 'Included' : 'Inactive'}
                 </span>
               </li>
               <li className="flex justify-between items-center py-3">
                 <span className="text-gray-700">Old mattress removal</span>
-                <span className="px-3 py-1 bg-blue-100 text-blue-700 rounded-full text-sm font-semibold">
-                  Included
+                <span className={`px-3 py-1 rounded-full text-sm font-semibold ${
+                  isSubscriptionActive 
+                    ? 'bg-blue-100 text-blue-700'
+                    : 'bg-gray-100 text-gray-500'
+                }`}>
+                  {isSubscriptionActive ? 'Included' : 'Inactive'}
                 </span>
               </li>
             </ul>
@@ -262,7 +313,7 @@ export default function PortalDashboard() {
           </div>
           
           {/* Lifetime Warranty */}
-          <div className="card">
+          <div className={`card ${!isSubscriptionActive ? 'opacity-60' : ''}`}>
             <div className="flex items-center mb-4">
               <div className="w-12 h-12 bg-purple-500 rounded-lg flex items-center justify-center text-white text-2xl mr-4">
                 ♾️
@@ -273,56 +324,96 @@ export default function PortalDashboard() {
             <ul className="space-y-3">
               <li className="flex justify-between items-center py-3 border-b border-gray-100">
                 <span className="text-gray-700">Defects protection</span>
-                <span className="px-3 py-1 bg-green-100 text-green-700 rounded-full text-sm font-semibold">
-                  Active
+                <span className={`px-3 py-1 rounded-full text-sm font-semibold ${
+                  isSubscriptionActive 
+                    ? 'bg-green-100 text-green-700'
+                    : 'bg-gray-100 text-gray-500'
+                }`}>
+                  {isSubscriptionActive ? 'Active' : 'Inactive'}
                 </span>
               </li>
               <li className="flex justify-between items-center py-3 border-b border-gray-100">
                 <span className="text-gray-700">Sagging protection</span>
-                <span className="px-3 py-1 bg-green-100 text-green-700 rounded-full text-sm font-semibold">
-                  Active
+                <span className={`px-3 py-1 rounded-full text-sm font-semibold ${
+                  isSubscriptionActive 
+                    ? 'bg-green-100 text-green-700'
+                    : 'bg-gray-100 text-gray-500'
+                }`}>
+                  {isSubscriptionActive ? 'Active' : 'Inactive'}
                 </span>
               </li>
               <li className="flex justify-between items-center py-3 border-b border-gray-100">
                 <span className="text-gray-700">Stain protection</span>
-                <span className="px-3 py-1 bg-green-100 text-green-700 rounded-full text-sm font-semibold">
-                  Active
+                <span className={`px-3 py-1 rounded-full text-sm font-semibold ${
+                  isSubscriptionActive 
+                    ? 'bg-green-100 text-green-700'
+                    : 'bg-gray-100 text-gray-500'
+                }`}>
+                  {isSubscriptionActive ? 'Active' : 'Inactive'}
                 </span>
               </li>
               <li className="flex justify-between items-center py-3">
                 <span className="text-gray-700">Professional cleaning</span>
-                <span className="px-3 py-1 bg-green-100 text-green-700 rounded-full text-sm font-semibold">
-                  Included
+                <span className={`px-3 py-1 rounded-full text-sm font-semibold ${
+                  isSubscriptionActive 
+                    ? 'bg-green-100 text-green-700'
+                    : 'bg-gray-100 text-gray-500'
+                }`}>
+                  {isSubscriptionActive ? 'Included' : 'Inactive'}
                 </span>
               </li>
             </ul>
             
-            <div className="bg-purple-50 rounded-lg p-4 mt-4">
-              <p className="text-sm text-purple-800 font-semibold">
-                Your mattress is protected forever
+            <div className={`rounded-lg p-4 mt-4 ${
+              isSubscriptionActive ? 'bg-purple-50' : 'bg-gray-50'
+            }`}>
+              <p className={`text-sm font-semibold ${
+                isSubscriptionActive ? 'text-purple-800' : 'text-gray-600'
+              }`}>
+                {isSubscriptionActive 
+                  ? 'Your mattress is protected forever'
+                  : 'Reactivate to protect your mattress'}
               </p>
             </div>
           </div>
         </div>
         
         {/* Membership Info */}
-        <div className="card bg-gradient-to-r from-[#e3f2fd] to-white">
-          <h4 className="text-xl font-bold text-[#1e40af] mb-4">📅 Membership Information</h4>
-          <div className="grid md:grid-cols-2 gap-4">
-            <div>
-              <p className="font-semibold text-gray-800 mb-2">
-                Next renewal: {formatDate(data.subscription.current_period_end)}
-              </p>
-              <p className="text-gray-600">Annual cost: $120</p>
-              <p className="text-green-600 font-semibold">You receive: $180 in store credit (150% value)</p>
-            </div>
-            <div className="bg-white rounded-lg p-4">
-              <p className="font-semibold text-[#1e40af] mb-1">Monthly breakdown:</p>
-              <p className="text-gray-600">$15 credit every month for 12 months</p>
-              <p className="text-sm text-gray-500 mt-2">Cancel anytime before renewal</p>
+        {isSubscriptionActive && data.subscription.current_period_end && (
+          <div className="card bg-gradient-to-r from-[#e3f2fd] to-white">
+            <h4 className="text-xl font-bold text-[#1e40af] mb-4">📅 Membership Information</h4>
+            <div className="grid md:grid-cols-2 gap-4">
+              <div>
+                <p className="font-semibold text-gray-800 mb-2">
+                  Next renewal: {formatDate(data.subscription.current_period_end)}
+                </p>
+                <p className="text-gray-600">Annual cost: $120</p>
+                <p className="text-green-600 font-semibold">You receive: $180 in store credit (150% value)</p>
+              </div>
+              <div className="bg-white rounded-lg p-4">
+                <p className="font-semibold text-[#1e40af] mb-1">Monthly breakdown:</p>
+                <p className="text-gray-600">$15 credit every month for 12 months</p>
+                <p className="text-sm text-gray-500 mt-2">Cancel anytime before renewal</p>
+              </div>
             </div>
           </div>
-        </div>
+        )}
+
+        {/* Reactivate CTA for inactive subscriptions */}
+        {!isSubscriptionActive && (
+          <div className="text-center mt-8 p-8 bg-gradient-to-r from-[#1e40af] to-[#00bcd4] rounded-lg text-white">
+            <h3 className="text-2xl font-bold mb-4">Ready to Reactivate Your Benefits?</h3>
+            <p className="mb-6 text-white/90">
+              Get instant access to $180 in annual store credit, free delivery, and lifetime warranty protection.
+            </p>
+            <button
+              onClick={() => router.push('/pricing')}
+              className="bg-[#ffd700] text-[#1e40af] hover:bg-yellow-400 px-8 py-4 rounded-lg font-bold text-lg transition-colors"
+            >
+              View Membership Options
+            </button>
+          </div>
+        )}
 
         {/* Logout Button */}
         <div className="text-center mt-8">

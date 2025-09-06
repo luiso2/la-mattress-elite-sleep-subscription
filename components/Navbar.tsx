@@ -48,8 +48,15 @@ export default function Navbar() {
         <div className="flex justify-between items-center h-20">
           {/* Logo */}
           <Link href="/" className="flex items-center">
-            <span className="text-3xl font-bold text-[#00bcd4]">LA</span>
-            <span className="text-3xl font-bold text-[#1e40af] ml-2">MATTRESS</span>
+            <img 
+              src="/logo.png" 
+              alt="LA MATTRESS" 
+              className="h-12 w-auto mr-3"
+            />
+            <div className="flex items-center">
+              <span className="text-3xl font-bold text-[#00bcd4]">LA</span>
+              <span className="text-3xl font-bold text-[#1e40af] ml-2">MATTRESS</span>
+            </div>
           </Link>
           
           {/* Desktop Navigation */}
