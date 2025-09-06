@@ -1,0 +1,107 @@
+import { NextRequest, NextResponse } from 'next/server';
+import Stripe from 'stripe';
+import jwt from 'jsonwebtoken';
+
+const stripe = new Stripe(process.env.STRIPE_SECRET_KEY as string, {
+  apiVersion: '2024-12-18.acacia',
+});
+
+export async function GET(request: NextRequest) {
+  try {
+    // Get the authorization header
+    const authHeader = request.headers.get('authorization');
+    if (!authHeader || !authHeader.startsWith('Bearer ')) {
+      return NextResponse.json(
+        { error: 'Unauthorized' },
+        { status: 401 }
+      );
+    }
+
+    const token = authHeader.split(' ')[1];
+
+    // Verify the token
+    let decoded: any;
+    try {
+      decoded = jwt.verify(token, process.env.JWT_SECRET as string);
+    } catch (error) {
+      return NextResponse.json(
+        { error: 'Invalid or expired token' },
+        { status: 401 }
+      );
+    }
+
+    const { customerId, email, name } = decoded;
+
+    // Fetch customer data from Stripe
+    const customer = await stripe.customers.retrieve(customerId);
+
+    // Fetch active subscriptions
+    const subscriptions = await stripe.subscriptions.list({
+      customer: customerId,
+      status: 'active',
+      limit: 1,
+    });
+
+    if (!subscriptions.data.length) {
+      return NextResponse.json(
+        { error: 'No active subscription found' },
+        { status: 404 }
+      );
+    }
+
+    const subscription = subscriptions.data[0];
+
+    // Calculate credits (for demonstration, we'll use metadata or default values)
+    // In a real app, you'd track this in a database
+    const currentMonth = new Date().getMonth();
+    const subscriptionStartMonth = new Date(subscription.created * 1000).getMonth();
+    const monthsActive = currentMonth - subscriptionStartMonth + 1;
+    
+    // Simulated data - in production, this should come from a database
+    const credits = {
+      available: 15, // Current month's credit
+      monthly: 15,
+      used: 0,
+      total: monthsActive * 15,
+    };
+
+    const protectorReplacements = {
+      available: 3,
+      used: 0,
+      total: 3,
+    };
+
+    // Check if customer metadata exists, otherwise use defaults
+    const customerMetadata = (customer as any).metadata || {};
+    
+    return NextResponse.json({
+      customer: {
+        name: name || (customer as any).name || 'Member',
+        email: (customer as any).email || email,
+        created: (customer as any).created ? new Date((customer as any).created * 1000).toISOString() : new Date().toISOString(),
+      },
+      subscription: {
+        status: subscription.status,
+        current_period_end: subscription.current_period_end,
+        cancel_at_period_end: subscription.cancel_at_period_end,
+      },
+      credits: {
+        available: parseInt(customerMetadata.credits_available || credits.available.toString()),
+        monthly: parseInt(customerMetadata.credits_monthly || credits.monthly.toString()),
+        used: parseInt(customerMetadata.credits_used || credits.used.toString()),
+      },
+      protectorReplacements: {
+        available: parseInt(customerMetadata.protector_available || protectorReplacements.available.toString()),
+        used: parseInt(customerMetadata.protector_used || protectorReplacements.used.toString()),
+        total: parseInt(customerMetadata.protector_total || protectorReplacements.total.toString()),
+      },
+    });
+
+  } catch (error) {
+    console.error('Portal data error:', error);
+    return NextResponse.json(
+      { error: 'An error occurred fetching portal data' },
+      { status: 500 }
+    );
+  }
+}
