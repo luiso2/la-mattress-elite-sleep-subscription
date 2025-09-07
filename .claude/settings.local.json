@@ -4,7 +4,9 @@
       "Read(//mnt/c/**)",
       "Bash(npm run dev:*)",
       "Bash(npm run build:*)",
-      "Bash(pkill:*)"
+      "Bash(pkill:*)",
+      "Bash(node:*)",
+      "Bash(stripe:*)"
     ],
     "deny": [],
     "ask": []

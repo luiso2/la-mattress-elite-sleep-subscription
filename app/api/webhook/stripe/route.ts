@@ -2,8 +2,39 @@ import { NextRequest } from 'next/server';
 import stripeService from '@/lib/services/stripe.service';
 import authService from '@/lib/services/auth.service';
 import emailService from '@/lib/services/email.service';
+import omnisendService from '@/lib/services/omnisend.service';
 import { ApiResponse } from '@/lib/utils/api-response';
 import Stripe from 'stripe';
+
+// Function to send data to Google Apps Script
+async function sendToGoogleAppsScript(data: any) {
+  try {
+    const gasWebhookUrl = process.env.GOOGLE_APPS_SCRIPT_WEBHOOK_URL;
+    if (!gasWebhookUrl) {
+      console.warn('Google Apps Script webhook URL not configured');
+      return;
+    }
+
+    const response = await fetch(gasWebhookUrl, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(data),
+    });
+
+    if (!response.ok) {
+      throw new Error(`HTTP error! status: ${response.status}`);
+    }
+
+    console.log('Data sent to Google Apps Script successfully');
+  } catch (error) {
+    console.error('Error sending data to Google Apps Script:', error);
+  }
+}
+
+// Track if welcome email has been sent to avoid duplicates
+const welcomeEmailSent = new Set<string>();
 
 export async function POST(request: NextRequest) {
   try {
@@ -77,8 +108,36 @@ async function handleCheckoutCompleted(event: Stripe.Event) {
         subscriptionStatus: 'active',
       });
 
-      // Send confirmation email
-      await emailService.sendSubscriptionConfirmation(customer.email, 'Premium');
+      // Send data to Google Apps Script
+      await sendToGoogleAppsScript({
+        name: customer.name || 'Cliente',
+        email: customer.email,
+        message: 'Gracias por registrarte en Elite Sleep+'
+      });
+
+      // Send welcome email only if not sent before
+      if (!welcomeEmailSent.has(customer.email)) {
+        console.log(`Sending welcome email via Omnisend to ${customer.email}`);
+        // Use Omnisend for welcome email
+        await omnisendService.sendWelcomeEmail(customer.email, customer.name || undefined, customerId);
+        welcomeEmailSent.add(customer.email);
+        
+        // Store in customer metadata that welcome email was sent
+        try {
+          const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
+            apiVersion: '2024-10-28.acacia',
+          });
+          await stripe.customers.update(customerId, {
+            metadata: {
+              ...customer.metadata,
+              welcome_email_sent: 'true',
+              welcome_email_date: new Date().toISOString(),
+            }
+          });
+        } catch (error) {
+          console.error('Error updating customer metadata:', error);
+        }
+      }
     }
   }
 }
@@ -93,12 +152,40 @@ async function handleSubscriptionCreated(event: Stripe.Event) {
       subscriptionStatus: subscription.status,
     });
 
-    // Determine plan name from price
-    const priceId = subscription.items.data[0].price.id;
-    let planName = 'Premium';
-    // You can map price IDs to plan names here
+    // Send data to Google Apps Script
+    await sendToGoogleAppsScript({
+      name: customer.name || 'Cliente',
+      email: customer.email,
+      message: 'Gracias por registrarte en Elite Sleep+'
+    });
 
-    await emailService.sendSubscriptionConfirmation(customer.email, planName);
+    // Check if this is the first subscription (welcome email not sent)
+    const welcomeEmailAlreadySent = customer.metadata?.welcome_email_sent === 'true';
+    
+    if (!welcomeEmailAlreadySent && !welcomeEmailSent.has(customer.email)) {
+      console.log(`Sending welcome email via Omnisend to new subscriber: ${customer.email}`);
+      // Use Omnisend for welcome email
+      await omnisendService.sendWelcomeEmail(customer.email, customer.name || undefined, customer.id);
+      welcomeEmailSent.add(customer.email);
+      
+      // Update customer metadata
+      try {
+        const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
+          apiVersion: '2024-10-28.acacia',
+        });
+        await stripe.customers.update(customer.id, {
+          metadata: {
+            ...customer.metadata,
+            welcome_email_sent: 'true',
+            welcome_email_date: new Date().toISOString(),
+          }
+        });
+      } catch (error) {
+        console.error('Error updating customer metadata:', error);
+      }
+    } else {
+      console.log(`Subscription renewed for ${customer.email} - no welcome email needed`);
+    }
   }
 }
 
@@ -123,7 +210,8 @@ async function handleSubscriptionDeleted(event: Stripe.Event) {
       subscriptionStatus: 'canceled',
     });
 
-    await emailService.sendCancellationConfirmation(customer.email);
+    // Use Omnisend for cancellation email
+    await omnisendService.sendCancellationEmail(customer.email, customer.name || undefined);
   }
 }
 
@@ -131,7 +219,9 @@ async function handleInvoicePaymentSucceeded(event: Stripe.Event) {
   const invoice = event.data.object as any;
   console.log(`Payment succeeded for invoice: ${invoice.id}`);
   
-  // Update subscription status if needed
+  // Check if this is the first payment (subscription creation) or a renewal
+  const isFirstPayment = invoice.billing_reason === 'subscription_create';
+  
   if (invoice.subscription) {
     const subscription = await stripeService.getSubscription(invoice.subscription as string);
     const customer = await stripeService.getCustomer(subscription.customer as string);
@@ -140,6 +230,36 @@ async function handleInvoicePaymentSucceeded(event: Stripe.Event) {
       await authService.updateUserByEmail(customer.email, {
         subscriptionStatus: 'active',
       });
+      
+      // Only send welcome email for first payment
+      if (isFirstPayment) {
+        const welcomeEmailAlreadySent = customer.metadata?.welcome_email_sent === 'true';
+        
+        if (!welcomeEmailAlreadySent && !welcomeEmailSent.has(customer.email)) {
+          console.log(`First payment received - sending welcome email via Omnisend to ${customer.email}`);
+          // Use Omnisend for welcome email
+          await omnisendService.sendWelcomeEmail(customer.email, customer.name || undefined, customer.id);
+          welcomeEmailSent.add(customer.email);
+          
+          // Update customer metadata
+          try {
+            const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
+              apiVersion: '2024-10-28.acacia',
+            });
+            await stripe.customers.update(customer.id, {
+              metadata: {
+                ...customer.metadata,
+                welcome_email_sent: 'true',
+                welcome_email_date: new Date().toISOString(),
+              }
+            });
+          } catch (error) {
+            console.error('Error updating customer metadata:', error);
+          }
+        }
+      } else {
+        console.log(`Renewal payment for ${customer.email} - no email sent`);
+      }
     }
   }
 }
@@ -149,7 +269,8 @@ async function handleInvoicePaymentFailed(event: Stripe.Event) {
   const customer = await stripeService.getCustomer(invoice.customer as string);
   
   if (customer && customer.email) {
-    await emailService.sendPaymentFailedEmail(customer.email);
+    // Use Omnisend for payment failed email
+    await omnisendService.sendPaymentFailedEmail(customer.email, customer.name || undefined);
     
     // Update subscription status
     await authService.updateUserByEmail(customer.email, {

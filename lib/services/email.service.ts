@@ -122,37 +122,74 @@ class EmailService {
     });
   }
 
-  async sendSubscriptionConfirmation(email: string, planName: string): Promise<boolean> {
+  async sendLaMattressWelcomeEmail(email: string, customerName?: string): Promise<boolean> {
+    const portalUrl = 'https://lamattressubscription.merktop.com/portal';
+    
     const html = `
       <!DOCTYPE html>
       <html>
         <head>
           <style>
-            body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; }
+            body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; margin: 0; padding: 0; }
             .container { max-width: 600px; margin: 0 auto; padding: 20px; }
-            .header { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 30px; text-align: center; border-radius: 10px 10px 0 0; }
-            .content { background: #f9f9f9; padding: 30px; border-radius: 0 0 10px 10px; }
-            .plan-box { background: white; padding: 20px; border-radius: 8px; margin: 20px 0; border: 2px solid #667eea; }
-            .button { display: inline-block; padding: 12px 24px; background: #667eea; color: white; text-decoration: none; border-radius: 5px; margin: 20px 0; }
-            .footer { text-align: center; margin-top: 30px; color: #666; font-size: 12px; }
+            .header { background: linear-gradient(135deg, #1e40af 0%, #00bcd4 100%); color: white; padding: 40px 30px; text-align: center; border-radius: 10px 10px 0 0; }
+            .logo { font-size: 32px; font-weight: bold; margin-bottom: 10px; }
+            .content { background: #ffffff; padding: 40px 30px; border: 1px solid #e0e0e0; border-radius: 0 0 10px 10px; }
+            .benefits-box { background: #f8f9fa; padding: 25px; border-radius: 8px; margin: 25px 0; border-left: 4px solid #00bcd4; }
+            .benefit-item { margin: 15px 0; padding-left: 25px; position: relative; }
+            .benefit-item:before { content: "✓"; position: absolute; left: 0; color: #00bcd4; font-weight: bold; font-size: 18px; }
+            .cta-button { display: inline-block; padding: 15px 35px; background: #ffd700; color: #1e40af; text-decoration: none; border-radius: 5px; margin: 25px 0; font-weight: bold; font-size: 16px; }
+            .info-section { background: #e3f2fd; padding: 20px; border-radius: 8px; margin: 20px 0; }
+            .footer { text-align: center; margin-top: 40px; padding-top: 20px; border-top: 1px solid #e0e0e0; color: #666; font-size: 12px; }
+            .highlight { color: #1e40af; font-weight: bold; }
           </style>
         </head>
         <body>
           <div class="container">
             <div class="header">
-              <h1>Subscription Confirmed!</h1>
+              <div class="logo">LA MATTRESS</div>
+              <h1 style="margin: 10px 0; font-size: 28px;">Welcome to Elite Sleep+!</h1>
+              <p style="margin: 0; font-size: 16px; opacity: 0.95;">Your Premium Membership is Now Active</p>
             </div>
             <div class="content">
-              <p>Your subscription has been successfully activated.</p>
-              <div class="plan-box">
-                <h3>Your Plan: ${planName}</h3>
-                <p>You now have full access to all ${planName} features.</p>
+              <h2 style="color: #1e40af;">Hello${customerName ? ` ${customerName}` : ''}!</h2>
+              
+              <p style="font-size: 16px;">Congratulations! Your <strong>Elite Sleep+ membership</strong> has been successfully activated. You now have access to exclusive benefits worth over $500 annually!</p>
+              
+              <div class="benefits-box">
+                <h3 style="color: #1e40af; margin-top: 0;">Your Elite Sleep+ Benefits:</h3>
+                <div class="benefit-item"><strong>$180 Annual Store Credit</strong> - $15 automatically added to your account every month</div>
+                <div class="benefit-item"><strong>Free Delivery & Setup</strong> - Professional white glove service on all purchases</div>
+                <div class="benefit-item"><strong>Lifetime Warranty Protection</strong> - Complete coverage for your mattress investment</div>
+                <div class="benefit-item"><strong>3 Free Mattress Protector Replacements</strong> - Keep your mattress fresh and clean</div>
+                <div class="benefit-item"><strong>One-Year Low Price Guarantee</strong> - Shop with confidence</div>
               </div>
-              <p>You can manage your subscription anytime from your account dashboard.</p>
-              <a href="${config.app.url}/dashboard" class="button">Go to Dashboard</a>
+              
+              <div class="info-section">
+                <h3 style="color: #1e40af; margin-top: 0;">How to Access Your Member Portal:</h3>
+                <p style="margin: 10px 0;">Simply visit our member portal and log in with <strong>the email address associated with your subscription</strong>:</p>
+                <p style="margin: 10px 0;"><strong>${email}</strong></p>
+                <p style="margin: 15px 0; font-size: 14px; color: #666;">No password needed - just enter your email to access your dashboard instantly!</p>
+              </div>
+              
+              <div style="text-align: center;">
+                <a href="${portalUrl}" class="cta-button">ACCESS YOUR MEMBER PORTAL</a>
+              </div>
+              
+              <div style="background: #fff3e0; padding: 15px; border-radius: 8px; margin-top: 25px;">
+                <p style="margin: 0; font-size: 14px;"><strong>Monthly Billing:</strong> Your membership fee of $10/month will be automatically charged to your payment method. You're getting $15 in credits for just $10 - that's 150% value!</p>
+              </div>
+              
+              <p style="margin-top: 25px; font-size: 14px; color: #666;">
+                <strong>Need Help?</strong><br>
+                Visit us in-store or call <strong>1-800-218-3578</strong><br>
+                Our team is here to help you make the most of your Elite Sleep+ membership.
+              </p>
             </div>
             <div class="footer">
-              <p>© 2024 Elite Sleep+. All rights reserved.</p>
+              <p style="margin: 5px 0;"><strong>LA MATTRESS</strong></p>
+              <p style="margin: 5px 0;">Elite Sleep+ Premium Membership Program</p>
+              <p style="margin: 10px 0; font-size: 11px;">This email confirms your subscription to Elite Sleep+. You can manage your membership anytime through the member portal.</p>
             </div>
           </div>
         </body>
@@ -161,9 +198,14 @@ class EmailService {
 
     return this.sendEmail({
       to: email,
-      subject: `Elite Sleep+ - ${planName} Plan Activated ✅`,
+      subject: 'Welcome to LA MATTRESS Elite Sleep+ - Your Membership is Active! 🎉',
       html,
     });
+  }
+
+  async sendSubscriptionConfirmation(email: string, planName: string): Promise<boolean> {
+    // This is now deprecated - use sendLaMattressWelcomeEmail instead
+    return this.sendLaMattressWelcomeEmail(email);
   }
 
   async sendCancellationConfirmation(email: string): Promise<boolean> {
