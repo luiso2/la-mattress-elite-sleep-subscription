@@ -10,6 +10,33 @@ interface ProtectorReplacement {
   date: string | null;
 }
 
+interface Coupon {
+  id: number;
+  code: string;
+  discount_type: string;
+  discount_value: string;
+  description: string;
+  status: string;
+  valid_from: string;
+  valid_until: string;
+  created_at: string;
+  current_uses: number;
+  max_uses: number | null;
+  minimum_purchase: number | null;
+  customer: {
+    id: number;
+    name: string;
+    email: string;
+  };
+}
+
+interface CouponsData {
+  success: boolean;
+  count: number;
+  coupons: Coupon[];
+  error?: string;
+}
+
 interface CustomerData {
   customer: {
     id: string;
@@ -33,6 +60,7 @@ interface CustomerData {
     date: string;
     employee: string;
   };
+  coupons?: CouponsData;
 }
 
 export default function EmployeeDashboard() {
@@ -43,6 +71,7 @@ export default function EmployeeDashboard() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [confirmLoading, setConfirmLoading] = useState(false);
+  const [couponActionLoading, setCouponActionLoading] = useState<string | null>(null);
 
   useEffect(() => {
     const token = localStorage.getItem('employeeToken');
@@ -129,6 +158,76 @@ export default function EmployeeDashboard() {
     localStorage.removeItem('employeeToken');
     localStorage.removeItem('employeeName');
     router.push('/employee/login');
+  };
+
+  const handleCouponAction = async (action: 'mark_used' | 'delete', coupon: Coupon) => {
+    const actionKey = `${action}_${coupon.id}`;
+    setCouponActionLoading(actionKey);
+    setError('');
+
+    try {
+      const token = localStorage.getItem('employeeToken');
+      const response = await fetch('/api/employee/coupon-action', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`,
+        },
+        body: JSON.stringify({ 
+          action,
+          couponId: coupon.id,
+          couponCode: coupon.code
+        }),
+      });
+
+      const data = await response.json();
+
+      if (response.ok && data.success) {
+        // Refresh customer data to show updated coupon status
+        await handleSearch(new Event('submit') as any);
+        
+        const actionText = action === 'mark_used' ? 'marked as used' : 'deleted';
+        alert(`Coupon ${coupon.code} successfully ${actionText}!`);
+      } else {
+        setError(data.error || `Failed to ${action} coupon`);
+      }
+    } catch (err) {
+      setError(`Failed to ${action} coupon`);
+    } finally {
+      setCouponActionLoading(null);
+    }
+  };
+
+  const confirmCouponAction = (action: 'mark_used' | 'delete', coupon: Coupon) => {
+    const actionText = action === 'mark_used' ? 'mark as used' : 'delete';
+    const confirmText = `Are you sure you want to ${actionText} the coupon "${coupon.code}"?\n\nThis action cannot be undone.`;
+    
+    if (window.confirm(confirmText)) {
+      handleCouponAction(action, coupon);
+    }
+  };
+
+  const getStatusColor = (status: string) => {
+    switch (status.toLowerCase()) {
+      case 'active':
+        return 'bg-green-100 text-green-800';
+      case 'used':
+        return 'bg-gray-100 text-gray-800';
+      case 'expired':
+        return 'bg-red-100 text-red-800';
+      case 'cancelled':
+        return 'bg-orange-100 text-orange-800';
+      default:
+        return 'bg-gray-100 text-gray-600';
+    }
+  };
+
+  const formatDiscountValue = (coupon: Coupon) => {
+    if (coupon.discount_type === 'percentage') {
+      return `${coupon.discount_value}%`;
+    } else {
+      return `$${coupon.discount_value}`;
+    }
   };
 
   return (
@@ -344,6 +443,125 @@ export default function EmployeeDashboard() {
                     <span className="font-semibold text-green-600">{customerData.protectorReplacements.available}</span>
                   </div>
                 </div>
+              </div>
+            )}
+
+            {/* Customer Coupons */}
+            {customerData.coupons && customerData.coupons.success && (
+              <div className="lg:col-span-2 bg-white rounded-lg shadow-md p-6">
+                <h3 className="text-lg font-bold text-gray-800 mb-4 flex items-center">
+                  <svg className="w-5 h-5 mr-2 text-orange-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 7h.01M7 3h5c.512 0 1.024.195 1.414.586l7 7a2 2 0 010 2.828l-7 7a2 2 0 01-2.828 0l-7-7A1.994 1.994 0 013 12V7a4 4 0 014-4z" />
+                  </svg>
+                  Customer Coupons ({customerData.coupons.count})
+                </h3>
+                
+                {customerData.coupons.count > 0 ? (
+                  <div className="space-y-4">
+                    {customerData.coupons.coupons.map((coupon) => (
+                      <div key={coupon.id} className="border rounded-lg p-4 hover:bg-gray-50 transition-colors">
+                        <div className="flex items-start justify-between">
+                          <div className="flex-1">
+                            <div className="flex items-center gap-3 mb-2">
+                              <span className="font-mono text-lg font-bold text-gray-800">
+                                {coupon.code}
+                              </span>
+                              <span className={`px-2 py-1 rounded-full text-xs font-semibold ${getStatusColor(coupon.status)}`}>
+                                {coupon.status.toUpperCase()}
+                              </span>
+                              <span className="text-lg font-semibold text-green-600">
+                                {formatDiscountValue(coupon)} OFF
+                              </span>
+                            </div>
+                            
+                            <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm text-gray-600 mb-3">
+                              <div>
+                                <span className="font-medium">Created:</span>
+                                <br />
+                                {new Date(coupon.created_at).toLocaleDateString()}
+                              </div>
+                              
+                              {coupon.valid_until && (
+                                <div>
+                                  <span className="font-medium">Expires:</span>
+                                  <br />
+                                  {new Date(coupon.valid_until).toLocaleDateString()}
+                                </div>
+                              )}
+                              
+                              {coupon.minimum_purchase && (
+                                <div>
+                                  <span className="font-medium">Min Purchase:</span>
+                                  <br />
+                                  ${coupon.minimum_purchase}
+                                </div>
+                              )}
+                              
+                              {coupon.max_uses && (
+                                <div>
+                                  <span className="font-medium">Uses:</span>
+                                  <br />
+                                  {coupon.current_uses} / {coupon.max_uses}
+                                </div>
+                              )}
+                            </div>
+                            
+                            {coupon.description && (
+                              <p className="text-sm text-gray-600 italic mb-3">
+                                {coupon.description}
+                              </p>
+                            )}
+                          </div>
+                          
+                          <div className="flex flex-col gap-2 ml-4">
+                            {coupon.status === 'active' && (
+                              <button
+                                onClick={() => confirmCouponAction('mark_used', coupon)}
+                                disabled={couponActionLoading === `mark_used_${coupon.id}`}
+                                className="px-3 py-1 bg-blue-600 text-white text-sm rounded hover:bg-blue-700 transition-colors disabled:opacity-50 min-w-[100px]"
+                              >
+                                {couponActionLoading === `mark_used_${coupon.id}` ? 'Processing...' : 'Mark as Used'}
+                              </button>
+                            )}
+                            
+                            <button
+                              onClick={() => confirmCouponAction('delete', coupon)}
+                              disabled={couponActionLoading === `delete_${coupon.id}`}
+                              className="px-3 py-1 bg-red-600 text-white text-sm rounded hover:bg-red-700 transition-colors disabled:opacity-50 min-w-[100px]"
+                            >
+                              {couponActionLoading === `delete_${coupon.id}` ? 'Processing...' : 'Delete'}
+                            </button>
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <div className="bg-gray-50 rounded-lg p-6 text-center">
+                    <svg className="w-12 h-12 mx-auto text-gray-400 mb-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 7h.01M7 3h5c.512 0 1.024.195 1.414.586l7 7a2 2 0 010 2.828l-7 7a2 2 0 01-2.828 0l-7-7A1.994 1.994 0 013 12V7a4 4 0 014-4z" />
+                    </svg>
+                    <p className="text-gray-600">No coupons found for this customer</p>
+                  </div>
+                )}
+              </div>
+            )}
+            
+            {/* Coupon Error Display */}
+            {customerData.coupons && !customerData.coupons.success && customerData.coupons.error && (
+              <div className="lg:col-span-2 bg-yellow-50 border border-yellow-200 rounded-lg p-6">
+                <h3 className="text-lg font-bold text-yellow-800 mb-2 flex items-center">
+                  <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L3.732 16.5c-.77.833.192 2.5 1.732 2.5z" />
+                  </svg>
+                  Coupon Data Warning
+                </h3>
+                <p className="text-yellow-700">
+                  Could not retrieve coupon information: {customerData.coupons.error}
+                </p>
+                <p className="text-yellow-600 text-sm mt-1">
+                  Customer data and other services are working normally.
+                </p>
               </div>
             )}
 

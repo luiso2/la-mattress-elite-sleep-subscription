@@ -122,6 +122,50 @@ export async function POST(request: NextRequest) {
       });
     }
 
+    // Get customer coupons from coupon backend
+    let customerCoupons = null;
+    try {
+      console.log(`Fetching coupons for customer: ${customer.email}`);
+      const couponResponse = await fetch(
+        `https://backend-shopify-coupon-production.up.railway.app/api/coupons/search/email/${encodeURIComponent(customer.email)}`,
+        {
+          method: 'GET',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          timeout: 10000, // 10 second timeout
+        }
+      );
+      
+      if (couponResponse.ok) {
+        const couponData = await couponResponse.json();
+        customerCoupons = {
+          success: true,
+          count: couponData.count || 0,
+          coupons: couponData.coupons || [],
+        };
+        console.log(`Found ${couponData.count} coupons for ${customer.email}`);
+      } else if (couponResponse.status === 404) {
+        // No coupons found - this is normal
+        customerCoupons = {
+          success: true,
+          count: 0,
+          coupons: [],
+        };
+        console.log(`No coupons found for ${customer.email}`);
+      } else {
+        throw new Error(`Coupon API responded with status ${couponResponse.status}`);
+      }
+    } catch (error) {
+      console.error('Failed to fetch customer coupons:', error);
+      customerCoupons = {
+        success: false,
+        count: 0,
+        coupons: [],
+        error: 'Failed to fetch coupon data',
+      };
+    }
+
     return NextResponse.json({
       success: true,
       data: {
@@ -143,6 +187,7 @@ export async function POST(request: NextRequest) {
           protectors: protectorDetails,
         },
         lastTransaction,
+        coupons: customerCoupons,
       },
     });
 
