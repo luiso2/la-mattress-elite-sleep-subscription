@@ -62,64 +62,95 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Search for customer in Stripe
-    const customers = await stripeClient.customers.search({
-      query: `email:"${email}"`,
-    });
+    // Initialize variables for customer data
+    let stripeCustomerData = null;
+    let stripeDataError = null;
 
-    if (!customers.data.length) {
-      return NextResponse.json(
-        { error: 'Customer not found' },
-        { status: 404 }
-      );
-    }
-
-    const customer = customers.data[0];
-
-    // Get all paid invoices to calculate total credits
-    const invoices = await stripeClient.invoices.list({
-      customer: customer.id,
-      status: 'paid',
-      limit: 100,
-    });
-
-    // Filter subscription invoices
-    const subscriptionInvoices = invoices.data.filter(invoice => invoice.subscription !== null);
-    
-    // Calculate credits
-    const creditsPerPayment = 15;
-    const totalPayments = subscriptionInvoices.length;
-    const totalCredits = totalPayments * creditsPerPayment;
-    
-    // Get metadata for used and reserved credits
-    const customerMetadata = customer.metadata || {};
-    const creditsUsed = parseInt(customerMetadata.credits_used || '0');
-    const creditsReserved = parseInt(customerMetadata.credits_reserved || '0');
-    const availableCredits = totalCredits - creditsUsed - creditsReserved;
-
-    // Get last transaction if exists
-    let lastTransaction = null;
-    if (customerMetadata.last_transaction) {
-      try {
-        lastTransaction = JSON.parse(customerMetadata.last_transaction);
-      } catch (e) {
-        console.error('Failed to parse last transaction:', e);
-      }
-    }
-
-    // Get protector replacements data
-    let protectorUsedCount = 0;
-    const protectorDetails = [];
-    
-    for (let i = 1; i <= 3; i++) {
-      const isUsed = customerMetadata[`protector_${i}_used`] === 'true';
-      if (isUsed) protectorUsedCount++;
-      
-      protectorDetails.push({
-        number: i,
-        used: isUsed,
-        date: customerMetadata[`protector_${i}_date`] || null,
+    // Search for customer in Stripe (independent logic)
+    try {
+      console.log(`Searching for customer in Stripe: ${email}`);
+      const customers = await stripeClient.customers.search({
+        query: `email:"${email}"`,
       });
+
+      if (customers.data.length > 0) {
+        const customer = customers.data[0];
+        console.log(`Found Stripe customer: ${customer.id}`);
+
+        // Get all paid invoices to calculate total credits
+        const invoices = await stripeClient.invoices.list({
+          customer: customer.id,
+          status: 'paid',
+          limit: 100,
+        });
+
+        // Filter subscription invoices
+        const subscriptionInvoices = invoices.data.filter(invoice => invoice.subscription !== null);
+        
+        // Calculate credits
+        const creditsPerPayment = 15;
+        const totalPayments = subscriptionInvoices.length;
+        const totalCredits = totalPayments * creditsPerPayment;
+        
+        // Get metadata for used and reserved credits
+        const customerMetadata = customer.metadata || {};
+        const creditsUsed = parseInt(customerMetadata.credits_used || '0');
+        const creditsReserved = parseInt(customerMetadata.credits_reserved || '0');
+        const availableCredits = totalCredits - creditsUsed - creditsReserved;
+
+        // Get last transaction if exists
+        let lastTransaction = null;
+        if (customerMetadata.last_transaction) {
+          try {
+            lastTransaction = JSON.parse(customerMetadata.last_transaction);
+          } catch (e) {
+            console.error('Failed to parse last transaction:', e);
+          }
+        }
+
+        // Get protector replacements data
+        let protectorUsedCount = 0;
+        const protectorDetails = [];
+        
+        for (let i = 1; i <= 3; i++) {
+          const isUsed = customerMetadata[`protector_${i}_used`] === 'true';
+          if (isUsed) protectorUsedCount++;
+          
+          protectorDetails.push({
+            number: i,
+            used: isUsed,
+            date: customerMetadata[`protector_${i}_date`] || null,
+          });
+        }
+
+        // Build Stripe customer data object
+        stripeCustomerData = {
+          customer: {
+            id: customer.id,
+            name: customer.name || 'Customer',
+            email: customer.email,
+          },
+          credits: {
+            total: totalCredits,
+            used: creditsUsed,
+            reserved: creditsReserved,
+            available: availableCredits,
+          },
+          protectorReplacements: {
+            total: 3,
+            used: protectorUsedCount,
+            available: 3 - protectorUsedCount,
+            protectors: protectorDetails,
+          },
+          lastTransaction,
+        };
+      } else {
+        console.log(`No Stripe customer found for: ${email}`);
+        stripeDataError = 'Customer not found in Stripe';
+      }
+    } catch (stripeError) {
+      console.error('Error searching Stripe customer:', stripeError);
+      stripeDataError = 'Failed to search Stripe customer data';
     }
 
     // Get customer coupons from coupon backend
@@ -166,29 +197,45 @@ export async function POST(request: NextRequest) {
       };
     }
 
+    // Determine response based on available data
+    const hasStripeData = stripeCustomerData !== null;
+    const hasCouponData = customerCoupons && customerCoupons.success && customerCoupons.count > 0;
+
+    // If neither Stripe nor coupon data exists, return 404
+    if (!hasStripeData && !hasCouponData) {
+      return NextResponse.json(
+        { 
+          error: 'No customer data found',
+          details: {
+            stripe: stripeDataError || 'Customer not found in Stripe',
+            coupons: customerCoupons?.error || 'No coupons found'
+          }
+        },
+        { status: 404 }
+      );
+    }
+
+    // Build response object
+    const responseData: any = {
+      email: email,
+      searchedAt: new Date().toISOString(),
+      coupons: customerCoupons,
+    };
+
+    // Add Stripe data if available
+    if (hasStripeData) {
+      responseData.customer = stripeCustomerData.customer;
+      responseData.credits = stripeCustomerData.credits;
+      responseData.protectorReplacements = stripeCustomerData.protectorReplacements;
+      responseData.lastTransaction = stripeCustomerData.lastTransaction;
+    } else {
+      // Indicate that Stripe data is not available
+      responseData.stripeDataError = stripeDataError;
+    }
+
     return NextResponse.json({
       success: true,
-      data: {
-        customer: {
-          id: customer.id,
-          name: customer.name || 'Customer',
-          email: customer.email,
-        },
-        credits: {
-          total: totalCredits,
-          used: creditsUsed,
-          reserved: creditsReserved,
-          available: availableCredits,
-        },
-        protectorReplacements: {
-          total: 3,
-          used: protectorUsedCount,
-          available: 3 - protectorUsedCount,
-          protectors: protectorDetails,
-        },
-        lastTransaction,
-        coupons: customerCoupons,
-      },
+      data: responseData,
     });
 
   } catch (error: any) {

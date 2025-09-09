@@ -38,12 +38,14 @@ interface CouponsData {
 }
 
 interface CustomerData {
-  customer: {
+  email: string;
+  searchedAt: string;
+  customer?: {
     id: string;
     name: string;
     email: string;
   };
-  credits: {
+  credits?: {
     total: number;
     used: number;
     reserved: number;
@@ -61,6 +63,7 @@ interface CustomerData {
     employee: string;
   };
   coupons?: CouponsData;
+  stripeDataError?: string;
 }
 
 export default function EmployeeDashboard() {
@@ -117,7 +120,7 @@ export default function EmployeeDashboard() {
   };
 
   const handleConfirmCredit = async () => {
-    if (!customerData || !customerData.credits.reserved) {
+    if (!customerData || !customerData.customer || !customerData.credits?.reserved) {
       return;
     }
 
@@ -323,59 +326,97 @@ export default function EmployeeDashboard() {
         {customerData && (
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
             {/* Customer Info */}
-            <div className="bg-white rounded-lg shadow-md p-6">
-              <h3 className="text-lg font-bold text-gray-800 mb-4 flex items-center">
-                <svg className="w-5 h-5 mr-2 text-[#1e40af]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
-                </svg>
-                Customer Information
-              </h3>
-              <div className="space-y-3">
-                <div className="flex justify-between py-2 border-b">
-                  <span className="text-gray-600">Name:</span>
-                  <span className="font-semibold">{customerData.customer.name}</span>
-                </div>
-                <div className="flex justify-between py-2 border-b">
-                  <span className="text-gray-600">Email:</span>
-                  <span className="font-semibold">{customerData.customer.email}</span>
-                </div>
-                <div className="flex justify-between py-2 border-b">
-                  <span className="text-gray-600">Customer ID:</span>
-                  <span className="font-mono text-sm">{customerData.customer.id}</span>
+            {customerData.customer ? (
+              <div className="bg-white rounded-lg shadow-md p-6">
+                <h3 className="text-lg font-bold text-gray-800 mb-4 flex items-center">
+                  <svg className="w-5 h-5 mr-2 text-[#1e40af]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+                  </svg>
+                  Customer Information
+                </h3>
+                <div className="space-y-3">
+                  <div className="flex justify-between py-2 border-b">
+                    <span className="text-gray-600">Name:</span>
+                    <span className="font-semibold">{customerData.customer.name}</span>
+                  </div>
+                  <div className="flex justify-between py-2 border-b">
+                    <span className="text-gray-600">Email:</span>
+                    <span className="font-semibold">{customerData.customer.email}</span>
+                  </div>
+                  <div className="flex justify-between py-2 border-b">
+                    <span className="text-gray-600">Customer ID:</span>
+                    <span className="font-mono text-sm">{customerData.customer.id}</span>
+                  </div>
                 </div>
               </div>
-            </div>
+            ) : (
+              <div className="bg-yellow-50 border border-yellow-200 rounded-lg shadow-md p-6">
+                <h3 className="text-lg font-bold text-yellow-800 mb-4 flex items-center">
+                  <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L3.732 16.5c-.77.833.192 2.5 1.732 2.5z" />
+                  </svg>
+                  Stripe Customer Not Found
+                </h3>
+                <div className="space-y-3">
+                  <div className="flex justify-between py-2 border-b">
+                    <span className="text-gray-600">Email Searched:</span>
+                    <span className="font-semibold">{customerData.email}</span>
+                  </div>
+                  <div className="bg-yellow-100 rounded p-3 text-sm text-yellow-800">
+                    <p><strong>Note:</strong> This customer was not found in Stripe, but coupon data is still being searched independently.</p>
+                    {customerData.stripeDataError && (
+                      <p className="mt-1"><strong>Details:</strong> {customerData.stripeDataError}</p>
+                    )}
+                  </div>
+                </div>
+              </div>
+            )}
 
             {/* Credit Information */}
-            <div className="bg-white rounded-lg shadow-md p-6">
-              <h3 className="text-lg font-bold text-gray-800 mb-4 flex items-center">
-                <svg className="w-5 h-5 mr-2 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-                </svg>
-                Credit Balance
-              </h3>
-              <div className="space-y-3">
-                <div className="flex justify-between py-2 border-b">
-                  <span className="text-gray-600">Total Earned:</span>
-                  <span className="font-semibold">${customerData.credits.total}</span>
-                </div>
-                <div className="flex justify-between py-2 border-b">
-                  <span className="text-gray-600">Already Used:</span>
-                  <span className="font-semibold text-red-600">-${customerData.credits.used}</span>
-                </div>
-                <div className="flex justify-between py-2 border-b">
-                  <span className="text-gray-600">Reserved for Use:</span>
-                  <span className="font-semibold text-orange-600">${customerData.credits.reserved}</span>
-                </div>
-                <div className="flex justify-between py-3 bg-green-50 px-3 rounded">
-                  <span className="text-gray-700 font-medium">Available:</span>
-                  <span className="font-bold text-green-600 text-xl">${customerData.credits.available}</span>
+            {customerData.credits ? (
+              <div className="bg-white rounded-lg shadow-md p-6">
+                <h3 className="text-lg font-bold text-gray-800 mb-4 flex items-center">
+                  <svg className="w-5 h-5 mr-2 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                  </svg>
+                  Credit Balance
+                </h3>
+                <div className="space-y-3">
+                  <div className="flex justify-between py-2 border-b">
+                    <span className="text-gray-600">Total Earned:</span>
+                    <span className="font-semibold">${customerData.credits.total}</span>
+                  </div>
+                  <div className="flex justify-between py-2 border-b">
+                    <span className="text-gray-600">Already Used:</span>
+                    <span className="font-semibold text-red-600">-${customerData.credits.used}</span>
+                  </div>
+                  <div className="flex justify-between py-2 border-b">
+                    <span className="text-gray-600">Reserved for Use:</span>
+                    <span className="font-semibold text-orange-600">${customerData.credits.reserved}</span>
+                  </div>
+                  <div className="flex justify-between py-3 bg-green-50 px-3 rounded">
+                    <span className="text-gray-700 font-medium">Available:</span>
+                    <span className="font-bold text-green-600 text-xl">${customerData.credits.available}</span>
+                  </div>
                 </div>
               </div>
-            </div>
+            ) : (
+              <div className="bg-gray-50 border border-gray-200 rounded-lg shadow-md p-6">
+                <h3 className="text-lg font-bold text-gray-600 mb-4 flex items-center">
+                  <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                  </svg>
+                  No Credit Data Available
+                </h3>
+                <div className="text-center text-gray-500">
+                  <p>Credit information is not available for this email.</p>
+                  <p className="text-sm mt-1">This customer may not have a Stripe subscription.</p>
+                </div>
+              </div>
+            )}
 
             {/* Credit Confirmation Section */}
-            {customerData.credits.reserved > 0 && (
+            {customerData.credits && customerData.credits.reserved > 0 && (
               <div className="lg:col-span-2 bg-orange-50 border-2 border-orange-200 rounded-lg p-6">
                 <h3 className="text-xl font-bold text-orange-700 mb-4">⚠️ Pending Credit Usage</h3>
                 <div className="bg-white rounded-lg p-6 mb-4">
