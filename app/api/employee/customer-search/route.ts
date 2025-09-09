@@ -156,9 +156,9 @@ export async function POST(request: NextRequest) {
     // Get customer coupons from coupon backend
     let customerCoupons = null;
     try {
-      console.log(`Fetching coupons for customer: ${customer.email}`);
+      console.log(`Fetching coupons for customer: ${email}`);
       const couponResponse = await fetch(
-        `https://backend-shopify-coupon-production.up.railway.app/api/coupons/search/email/${encodeURIComponent(customer.email)}`,
+        `https://backend-shopify-coupon-production.up.railway.app/api/coupons/search/email/${encodeURIComponent(email)}`,
         {
           method: 'GET',
           headers: {
@@ -175,7 +175,7 @@ export async function POST(request: NextRequest) {
           count: couponData.count || 0,
           coupons: couponData.coupons || [],
         };
-        console.log(`Found ${couponData.count} coupons for ${customer.email}`);
+        console.log(`Found ${couponData.count} coupons for ${email}`);
       } else if (couponResponse.status === 404) {
         // No coupons found - this is normal
         customerCoupons = {
@@ -183,7 +183,7 @@ export async function POST(request: NextRequest) {
           count: 0,
           coupons: [],
         };
-        console.log(`No coupons found for ${customer.email}`);
+        console.log(`No coupons found for ${email}`);
       } else {
         throw new Error(`Coupon API responded with status ${couponResponse.status}`);
       }
