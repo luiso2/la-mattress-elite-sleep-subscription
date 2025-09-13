@@ -10,6 +10,16 @@ interface ProtectorReplacement {
   date: string | null;
 }
 
+interface CashbackTransaction {
+  id: string;
+  date: string;
+  amount: number;
+  cashback: number;
+  description: string;
+  employee: string;
+  type: 'earned' | 'used';
+}
+
 interface PortalData {
   customer: {
     name: string;
@@ -28,6 +38,12 @@ interface PortalData {
     used: number;
     total?: number;
     reserved?: number;
+  };
+  cashback?: {
+    balance: number;
+    totalEarned: number;
+    totalUsed: number;
+    history: CashbackTransaction[];
   };
   protectorReplacements: {
     available: number;
@@ -97,6 +113,30 @@ export default function PortalDashboard() {
       }
 
       const portalData = await res.json();
+      
+      // Load cashback data
+      try {
+        const cashbackRes = await fetch('/api/cashback/balance', {
+          headers: {
+            'Authorization': `Bearer ${token}`,
+          },
+        });
+        
+        if (cashbackRes.ok) {
+          const cashbackData = await cashbackRes.json();
+          if (cashbackData.success) {
+            portalData.cashback = {
+              balance: cashbackData.data.cashbackBalance,
+              totalEarned: cashbackData.data.totalEarned,
+              totalUsed: cashbackData.data.totalUsed,
+              history: cashbackData.data.cashbackHistory
+            };
+          }
+        }
+      } catch (cashbackErr) {
+        console.log('Could not load cashback data:', cashbackErr);
+      }
+      
       setData(portalData);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'An error occurred');
@@ -336,6 +376,69 @@ export default function PortalDashboard() {
         
         {/* Benefits Grid */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
+          {/* 20% Cashback Balance - New Elite Benefit */}
+          {data.cashback && isSubscriptionActive && (
+            <div className="card bg-gradient-to-br from-purple-50 to-white border-purple-200">
+              <div className="flex items-center justify-between mb-4">
+                <div className="flex items-center">
+                  <div className="w-12 h-12 bg-purple-500 rounded-lg flex items-center justify-center text-white text-2xl mr-4">
+                    💸
+                  </div>
+                  <h3 className="text-xl font-bold text-purple-800">10% Cashback Rewards</h3>
+                </div>
+                <span className="text-xs bg-purple-600 text-white px-2 py-1 rounded-full">Elite Only</span>
+              </div>
+              
+              <div className="text-center py-6 bg-purple-50 rounded-lg mb-4">
+                <div className="text-5xl font-bold text-purple-600">${data.cashback.balance.toFixed(2)}</div>
+                <div className="text-gray-600 mt-2">Available Cashback</div>
+              </div>
+              
+              <div className="space-y-3">
+                <div className="flex justify-between py-2 border-b border-gray-100">
+                  <span className="text-gray-600">Total earned (10%):</span>
+                  <span className="font-semibold text-green-600">+${data.cashback.totalEarned.toFixed(2)}</span>
+                </div>
+                <div className="flex justify-between py-2 border-b border-gray-100">
+                  <span className="text-gray-600">Total used:</span>
+                  <span className="font-semibold text-red-600">-${data.cashback.totalUsed.toFixed(2)}</span>
+                </div>
+                <div className="flex justify-between py-2">
+                  <span className="text-gray-600">Current balance:</span>
+                  <span className="font-bold text-purple-600">${data.cashback.balance.toFixed(2)}</span>
+                </div>
+              </div>
+              
+              {data.cashback.history && data.cashback.history.length > 0 && (
+                <div className="mt-4 bg-white rounded-lg p-3">
+                  <h4 className="text-sm font-semibold text-gray-700 mb-2">Recent Activity:</h4>
+                  <div className="space-y-2 max-h-32 overflow-y-auto">
+                    {data.cashback.history.slice(0, 3).map((tx) => (
+                      <div key={tx.id} className="text-xs border-b pb-1">
+                        <div className="flex justify-between">
+                          <span className="text-gray-600">{tx.description}</span>
+                          <span className={tx.type === 'earned' ? 'text-green-600 font-semibold' : 'text-red-600 font-semibold'}>
+                            {tx.type === 'earned' ? '+' : ''}{tx.cashback.toFixed(2)}
+                          </span>
+                        </div>
+                        <div className="text-gray-400 text-xs">
+                          {new Date(tx.date).toLocaleDateString()}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+              
+              <div className="bg-purple-100 rounded-lg p-4 mt-4">
+                <p className="text-sm text-purple-800">
+                  <strong>How it works:</strong> Earn 10% cashback on all in-store purchases. 
+                  Show this screen to our staff when making a purchase!
+                </p>
+              </div>
+            </div>
+          )}
+          
           {/* Available Credit */}
           <div className={`card ${!isSubscriptionActive ? 'opacity-60' : ''}`}>
             <div className="flex items-center mb-4">

@@ -37,6 +37,17 @@ interface CouponsData {
   error?: string;
 }
 
+interface CashbackTransaction {
+  id: string;
+  date: string;
+  amount: number;
+  cashback: number;
+  description: string;
+  employee: string;
+  employeeEmail: string;
+  type: 'earned' | 'used';
+}
+
 interface CustomerData {
   email: string;
   searchedAt: string;
@@ -50,6 +61,11 @@ interface CustomerData {
     used: number;
     reserved: number;
     available: number;
+  };
+  cashback?: {
+    balance: number;
+    history: CashbackTransaction[];
+    lastUpdate?: string;
   };
   protectorReplacements?: {
     total: number;
@@ -75,6 +91,13 @@ export default function EmployeeDashboard() {
   const [error, setError] = useState('');
   const [confirmLoading, setConfirmLoading] = useState(false);
   const [couponActionLoading, setCouponActionLoading] = useState<string | null>(null);
+  const [showCashbackModal, setShowCashbackModal] = useState(false);
+  const [cashbackAmount, setCashbackAmount] = useState('');
+  const [cashbackDescription, setCashbackDescription] = useState('');
+  const [cashbackLoading, setCashbackLoading] = useState(false);
+  const [showUseCashbackModal, setShowUseCashbackModal] = useState(false);
+  const [useCashbackAmount, setUseCashbackAmount] = useState('');
+  const [useCashbackDescription, setUseCashbackDescription] = useState('');
 
   useEffect(() => {
     const token = localStorage.getItem('employeeToken');
@@ -108,6 +131,23 @@ export default function EmployeeDashboard() {
       const data = await response.json();
 
       if (response.ok && data.success) {
+        // Fetch cashback data if customer exists
+        if (data.data.customer) {
+          const cashbackResponse = await fetch(`/api/employee/cashback?customerId=${data.data.customer.id}`, {
+            headers: {
+              'Authorization': `Bearer ${token}`,
+            },
+          });
+          
+          if (cashbackResponse.ok) {
+            const cashbackData = await cashbackResponse.json();
+            data.data.cashback = {
+              balance: cashbackData.data.cashbackBalance,
+              history: cashbackData.data.cashbackHistory,
+              lastUpdate: cashbackData.data.lastUpdate
+            };
+          }
+        }
         setCustomerData(data.data);
       } else {
         setError(data.error || 'Customer not found');
@@ -154,6 +194,102 @@ export default function EmployeeDashboard() {
       setError('Failed to confirm credit usage');
     } finally {
       setConfirmLoading(false);
+    }
+  };
+
+  const handleAddCashback = async () => {
+    if (!customerData?.customer || !cashbackAmount || !cashbackDescription) {
+      setError('Please fill all required fields');
+      return;
+    }
+
+    setCashbackLoading(true);
+    setError('');
+
+    try {
+      const token = localStorage.getItem('employeeToken');
+      const response = await fetch('/api/employee/cashback', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`,
+        },
+        body: JSON.stringify({
+          action: 'add_purchase',
+          customerId: customerData.customer.id,
+          amount: parseFloat(cashbackAmount),
+          description: cashbackDescription
+        }),
+      });
+
+      const data = await response.json();
+
+      if (response.ok && data.success) {
+        alert(data.message);
+        setShowCashbackModal(false);
+        setCashbackAmount('');
+        setCashbackDescription('');
+        // Refresh customer data
+        await handleSearch(new Event('submit') as any);
+      } else {
+        setError(data.error || 'Failed to add cashback');
+      }
+    } catch (err) {
+      setError('Failed to process cashback');
+    } finally {
+      setCashbackLoading(false);
+    }
+  };
+
+  const handleUseCashback = async () => {
+    if (!customerData?.customer || !useCashbackAmount) {
+      setError('Please enter the amount to use');
+      return;
+    }
+
+    const amount = parseFloat(useCashbackAmount);
+    const maxAllowed = (customerData.cashback?.balance || 0) * 0.50;
+    
+    if (amount > maxAllowed) {
+      setError(`Cannot update more than 50% of balance. Maximum allowed: $${maxAllowed.toFixed(2)}`);
+      return;
+    }
+
+    setCashbackLoading(true);
+    setError('');
+
+    try {
+      const token = localStorage.getItem('employeeToken');
+      const response = await fetch('/api/employee/cashback', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`,
+        },
+        body: JSON.stringify({
+          action: 'use_cashback',
+          customerId: customerData.customer.id,
+          cashbackUsed: parseFloat(useCashbackAmount),
+          description: useCashbackDescription || 'Cashback credit used in store'
+        }),
+      });
+
+      const data = await response.json();
+
+      if (response.ok && data.success) {
+        alert(data.message);
+        setShowUseCashbackModal(false);
+        setUseCashbackAmount('');
+        setUseCashbackDescription('');
+        // Refresh customer data
+        await handleSearch(new Event('submit') as any);
+      } else {
+        setError(data.error || 'Failed to use cashback');
+      }
+    } catch (err) {
+      setError('Failed to process cashback usage');
+    } finally {
+      setCashbackLoading(false);
     }
   };
 
@@ -368,6 +504,69 @@ export default function EmployeeDashboard() {
                       <p className="mt-1"><strong>Details:</strong> {customerData.stripeDataError}</p>
                     )}
                   </div>
+                </div>
+              </div>
+            )}
+
+            {/* Cashback Information - 20% Benefit */}
+            {customerData.customer && (
+              <div className="bg-gradient-to-br from-purple-50 to-purple-100 rounded-lg shadow-md p-6 border border-purple-200">
+                <h3 className="text-lg font-bold text-purple-800 mb-4 flex items-center justify-between">
+                  <div className="flex items-center">
+                    <svg className="w-5 h-5 mr-2 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                    </svg>
+                    10% Cashback Balance
+                  </div>
+                  <span className="text-xs bg-purple-600 text-white px-2 py-1 rounded-full">Elite Benefit - 10%</span>
+                </h3>
+                <div className="space-y-3">
+                  <div className="bg-white rounded-lg p-4">
+                    <div className="flex justify-between items-center mb-3">
+                      <span className="text-gray-700 font-medium">Current Balance:</span>
+                      <span className="font-bold text-2xl text-purple-600">
+                        ${customerData.cashback?.balance || 0}
+                      </span>
+                    </div>
+                    
+                    <div className="flex gap-2">
+                      <button
+                        onClick={() => setShowCashbackModal(true)}
+                        className="flex-1 px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors font-semibold text-sm"
+                      >
+                        + Add Purchase
+                      </button>
+                      <button
+                        onClick={() => setShowUseCashbackModal(true)}
+                        disabled={!customerData.cashback?.balance || customerData.cashback.balance === 0}
+                        className="flex-1 px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors font-semibold text-sm disabled:bg-gray-400 disabled:cursor-not-allowed"
+                      >
+                        Update Used
+                      </button>
+                    </div>
+                  </div>
+
+                  {/* Recent Transactions */}
+                  {customerData.cashback?.history && customerData.cashback.history.length > 0 && (
+                    <div className="bg-white rounded-lg p-3">
+                      <h4 className="text-sm font-semibold text-gray-700 mb-2">Recent Transactions:</h4>
+                      <div className="space-y-2 max-h-40 overflow-y-auto">
+                        {customerData.cashback.history.slice(0, 5).map((tx) => (
+                          <div key={tx.id} className="text-xs border-b pb-2">
+                            <div className="flex justify-between">
+                              <span className="font-medium">{tx.description}</span>
+                              <span className={tx.type === 'earned' ? 'text-green-600 font-semibold' : 'text-red-600 font-semibold'}>
+                                {tx.type === 'earned' ? '+' : ''}{tx.cashback.toFixed(2)}
+                              </span>
+                            </div>
+                            <div className="text-gray-500 mt-1">
+                              {new Date(tx.date).toLocaleDateString()} • {tx.employee}
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
                 </div>
               </div>
             )}
@@ -643,6 +842,154 @@ export default function EmployeeDashboard() {
           </div>
         )}
       </div>
+
+      {/* Add Purchase Modal */}
+      {showCashbackModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white rounded-lg p-6 w-full max-w-md">
+            <h3 className="text-xl font-bold text-gray-800 mb-4">Add Customer Purchase</h3>
+            
+            <div className="space-y-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Purchase Amount ($)
+                </label>
+                <input
+                  type="number"
+                  step="0.01"
+                  value={cashbackAmount}
+                  onChange={(e) => setCashbackAmount(e.target.value)}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500"
+                  placeholder="Enter amount"
+                />
+                {cashbackAmount && (
+                  <p className="text-sm text-purple-600 mt-1">
+                    Cashback earned: ${(parseFloat(cashbackAmount) * 0.10).toFixed(2)} (10%)
+                  </p>
+                )}
+              </div>
+              
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  What did the customer purchase?
+                </label>
+                <textarea
+                  value={cashbackDescription}
+                  onChange={(e) => setCashbackDescription(e.target.value)}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500"
+                  rows={3}
+                  placeholder="e.g., King Size Memory Foam Mattress"
+                />
+              </div>
+
+              {error && (
+                <div className="bg-red-50 border border-red-200 text-red-700 px-3 py-2 rounded text-sm">
+                  {error}
+                </div>
+              )}
+              
+              <div className="flex gap-3">
+                <button
+                  onClick={handleAddCashback}
+                  disabled={cashbackLoading}
+                  className="flex-1 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors disabled:opacity-50 font-semibold"
+                >
+                  {cashbackLoading ? 'Processing...' : 'Add Purchase & Calculate Cashback'}
+                </button>
+                <button
+                  onClick={() => {
+                    setShowCashbackModal(false);
+                    setCashbackAmount('');
+                    setCashbackDescription('');
+                    setError('');
+                  }}
+                  className="px-6 py-2 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 transition-colors font-semibold"
+                >
+                  Cancel
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Update Used Cashback Modal */}
+      {showUseCashbackModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white rounded-lg p-6 w-full max-w-md">
+            <h3 className="text-xl font-bold text-gray-800 mb-4">Update Used Cashback Credit</h3>
+            
+            <div className="bg-green-50 border border-green-200 rounded-lg p-3 mb-4">
+              <p className="text-sm text-green-800">
+                Available Balance: <span className="font-bold text-lg">${customerData?.cashback?.balance || 0}</span>
+              </p>
+              <p className="text-xs text-green-700 mt-1">
+                Maximum update allowed (50%): <span className="font-bold">${((customerData?.cashback?.balance || 0) * 0.50).toFixed(2)}</span>
+              </p>
+            </div>
+            
+            <div className="space-y-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Amount Used by Customer ($)
+                </label>
+                <input
+                  type="number"
+                  step="0.01"
+                  max={((customerData?.cashback?.balance || 0) * 0.50).toFixed(2)}
+                  value={useCashbackAmount}
+                  onChange={(e) => setUseCashbackAmount(e.target.value)}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500"
+                  placeholder="Enter amount customer used"
+                />
+                <p className="text-xs text-gray-500 mt-1">
+                  ⚠️ Maximum 50% of balance can be updated per transaction
+                </p>
+              </div>
+              
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Description (Optional)
+                </label>
+                <input
+                  type="text"
+                  value={useCashbackDescription}
+                  onChange={(e) => setUseCashbackDescription(e.target.value)}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500"
+                  placeholder="e.g., Applied to mattress purchase"
+                />
+              </div>
+
+              {error && (
+                <div className="bg-red-50 border border-red-200 text-red-700 px-3 py-2 rounded text-sm">
+                  {error}
+                </div>
+              )}
+              
+              <div className="flex gap-3">
+                <button
+                  onClick={handleUseCashback}
+                  disabled={cashbackLoading}
+                  className="flex-1 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors disabled:opacity-50 font-semibold"
+                >
+                  {cashbackLoading ? 'Processing...' : 'Confirm Update'}
+                </button>
+                <button
+                  onClick={() => {
+                    setShowUseCashbackModal(false);
+                    setUseCashbackAmount('');
+                    setUseCashbackDescription('');
+                    setError('');
+                  }}
+                  className="px-6 py-2 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 transition-colors font-semibold"
+                >
+                  Cancel
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

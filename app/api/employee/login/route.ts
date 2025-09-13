@@ -49,6 +49,7 @@ export async function POST(request: NextRequest) {
         email: employee.email,
         name: employee.name,
         role: 'employee',
+        isEmployee: true,
       },
       process.env.JWT_SECRET as string,
       { expiresIn: '8h' } // 8 hour shift
