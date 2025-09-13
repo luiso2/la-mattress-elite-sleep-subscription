@@ -392,6 +392,11 @@ export default function PortalDashboard() {
               <div className="text-center py-6 bg-purple-50 rounded-lg mb-4">
                 <div className="text-5xl font-bold text-purple-600">${data.cashback.balance.toFixed(2)}</div>
                 <div className="text-gray-600 mt-2">Available Cashback</div>
+                {data.cashback.balance > 0 && (
+                  <div className="text-sm text-purple-700 mt-2">
+                    Max per transaction: <span className="font-bold">${(data.cashback.balance * 0.50).toFixed(2)}</span> (50%)
+                  </div>
+                )}
               </div>
               
               <div className="space-y-3">
@@ -434,6 +439,10 @@ export default function PortalDashboard() {
                 <p className="text-sm text-purple-800">
                   <strong>How it works:</strong> Earn 10% cashback on all in-store purchases. 
                   Show this screen to our staff when making a purchase!
+                </p>
+                <p className="text-xs text-purple-700 mt-2">
+                  <strong>⚠️ Important:</strong> You can use up to 50% of your balance per transaction. 
+                  For example, if you have $100 in cashback, you can use maximum $50 per purchase.
                 </p>
               </div>
             </div>
