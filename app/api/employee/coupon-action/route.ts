@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import jwt from 'jsonwebtoken';
+import { couponService } from '@/lib/services/coupon.service';
 
 export async function POST(request: NextRequest) {
   try {
@@ -13,7 +14,7 @@ export async function POST(request: NextRequest) {
     }
 
     const token = authHeader.split(' ')[1];
-    
+
     try {
       const decoded = jwt.verify(token, process.env.JWT_SECRET as string) as any;
       if (decoded.role !== 'employee') {
@@ -45,88 +46,65 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    let apiResponse;
-    const baseUrl = 'https://backend-shopify-coupon-production.up.railway.app';
+    let result;
 
-    try {
-      if (action === 'mark_used') {
-        // Mark coupon as used
-        const url = couponId 
-          ? `${baseUrl}/api/coupons/db/${couponId}/status`
-          : null;
-        
-        if (!url) {
+    if (action === 'mark_used') {
+      if (!couponId) {
+        // If we have a code, find the coupon first
+        if (couponCode) {
+          const coupon = await couponService.getCouponByCode(couponCode);
+          if (!coupon) {
+            return NextResponse.json(
+              { error: 'Coupon not found' },
+              { status: 404 }
+            );
+          }
+          result = await couponService.markCouponAsUsed(coupon.id);
+        } else {
           return NextResponse.json(
-            { error: 'Coupon ID is required to mark as used' },
+            { error: 'Coupon ID or code is required to mark as used' },
             { status: 400 }
           );
         }
-
-        console.log(`Marking coupon ${couponId} as used`);
-        apiResponse = await fetch(url, {
-          method: 'PATCH',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({ status: 'used' }),
-          timeout: 10000,
-        });
-
-      } else if (action === 'delete') {
-        // Delete coupon
-        const url = couponId 
-          ? `${baseUrl}/api/coupons/db/${couponId}`
-          : `${baseUrl}/api/coupons/db/code/${encodeURIComponent(couponCode)}`;
-
-        console.log(`Deleting coupon ${couponId || couponCode}`);
-        apiResponse = await fetch(url, {
-          method: 'DELETE',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          timeout: 10000,
-        });
+      } else {
+        result = await couponService.markCouponAsUsed(parseInt(couponId));
       }
-
-      if (!apiResponse) {
-        throw new Error('No API response received');
-      }
-
-      const responseData = await apiResponse.json();
-
-      if (!apiResponse.ok) {
-        throw new Error(`Coupon API error: ${responseData.error || 'Unknown error'}`);
-      }
-
-      console.log(`Coupon action ${action} completed successfully`);
-      
-      return NextResponse.json({
-        success: true,
-        action,
-        message: action === 'mark_used' 
-          ? 'Coupon marked as used successfully' 
-          : 'Coupon deleted successfully',
-        data: responseData,
-      });
-
-    } catch (fetchError: any) {
-      console.error(`Failed to ${action} coupon:`, fetchError);
-      
-      if (fetchError.name === 'AbortError') {
+    } else if (action === 'delete') {
+      if (couponId) {
+        result = await couponService.deleteCoupon(parseInt(couponId));
+      } else if (couponCode) {
+        const coupon = await couponService.getCouponByCode(couponCode);
+        if (!coupon) {
+          return NextResponse.json(
+            { error: 'Coupon not found' },
+            { status: 404 }
+          );
+        }
+        result = await couponService.deleteCoupon(coupon.id);
+      } else {
         return NextResponse.json(
-          { error: 'Request timeout - coupon service may be unavailable' },
-          { status: 504 }
+          { error: 'Coupon ID or code is required' },
+          { status: 400 }
         );
       }
+    }
 
+    if (!result?.success) {
       return NextResponse.json(
-        { 
-          error: `Failed to ${action} coupon`, 
-          details: fetchError.message 
-        },
-        { status: 502 }
+        { error: result?.error || `Failed to ${action} coupon` },
+        { status: 400 }
       );
     }
+
+    console.log(`Coupon action ${action} completed successfully`);
+
+    return NextResponse.json({
+      success: true,
+      action,
+      message: action === 'mark_used'
+        ? 'Coupon marked as used successfully'
+        : 'Coupon deleted successfully'
+    });
 
   } catch (error: any) {
     console.error('Coupon action error:', error);

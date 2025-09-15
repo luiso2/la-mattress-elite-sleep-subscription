@@ -3,15 +3,24 @@
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import Navbar from '@/components/Navbar';
+import CouponList from '@/components/coupons/CouponList';
 
 export default function DashboardPage() {
   const router = useRouter();
   const [user, setUser] = useState<any>(null);
   const [loading, setLoading] = useState(true);
+  const [coupons, setCoupons] = useState<any[]>([]);
+  const [couponsLoading, setCouponsLoading] = useState(false);
 
   useEffect(() => {
     fetchUserData();
   }, []);
+
+  useEffect(() => {
+    if (user) {
+      fetchCoupons();
+    }
+  }, [user]);
 
   const fetchUserData = async () => {
     try {
@@ -38,6 +47,27 @@ export default function DashboardPage() {
       router.push('/login');
     } finally {
       setLoading(false);
+    }
+  };
+
+  const fetchCoupons = async () => {
+    try {
+      setCouponsLoading(true);
+      const token = localStorage.getItem('token');
+      const response = await fetch('/api/coupons?status=active', {
+        headers: {
+          'Authorization': `Bearer ${token}`,
+        },
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        setCoupons(data.coupons || []);
+      }
+    } catch (error) {
+      console.error('Failed to fetch coupons:', error);
+    } finally {
+      setCouponsLoading(false);
     }
   };
 
@@ -77,7 +107,7 @@ export default function DashboardPage() {
   return (
     <div className="min-h-screen bg-gray-50">
       <Navbar />
-      
+
       <div className="container-mobile py-8">
         <h1 className="text-3xl lg:text-4xl font-bold text-white mb-8">Welcome, {user?.name || 'Member'}!</h1>
 
@@ -115,8 +145,8 @@ export default function DashboardPage() {
                 <div className="flex justify-between items-center py-3 border-b border-gray-100">
                   <span className="text-gray-600">Status</span>
                   <span className={`px-3 py-1 rounded-full text-sm font-semibold ${
-                    user.subscription.status === 'active' 
-                      ? 'bg-green-100 text-green-700' 
+                    user.subscription.status === 'active'
+                      ? 'bg-green-100 text-green-700'
                       : 'bg-yellow-100 text-yellow-700'
                   }`}>
                     {user.subscription.status.charAt(0).toUpperCase() + user.subscription.status.slice(1)}
@@ -162,6 +192,23 @@ export default function DashboardPage() {
           </div>
         </div>
 
+        {/* My Coupons Section */}
+        <div className="mt-8 card">
+          <div className="flex justify-between items-center mb-6">
+            <h2 className="text-xl font-bold text-[#1e40af]">My Coupons</h2>
+            <span className="text-sm text-gray-500">
+              {coupons.filter(c => c.status === 'active').length} active coupon{coupons.filter(c => c.status === 'active').length !== 1 ? 's' : ''}
+            </span>
+          </div>
+
+          <CouponList
+            coupons={coupons}
+            loading={couponsLoading}
+            showActions={false}
+            emptyMessage="You don't have any coupons yet. Visit our store to get exclusive discounts!"
+          />
+        </div>
+
         {/* Member Benefits */}
         <div className="mt-8 card">
           <h2 className="text-xl font-bold text-[#1e40af] mb-6">Your Member Benefits</h2>
@@ -189,7 +236,7 @@ export default function DashboardPage() {
         <div className="mt-8 card">
           <h2 className="text-xl font-bold text-[#1e40af] mb-6">Quick Actions</h2>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            <button 
+            <button
               onClick={() => router.push('/portal')}
               className="p-6 border-2 border-gray-200 rounded-lg hover:border-[#00bcd4] hover:bg-[#e3f2fd] transition-all group"
             >

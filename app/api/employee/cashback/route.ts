@@ -51,16 +51,22 @@ export async function POST(request: NextRequest) {
     }
 
     const body = await request.json();
-    const { action, customerId, amount, description, cashbackUsed } = body;
+    const { customerEmail, amount, description, type } = body;
 
-    if (!action || !customerId) {
-      return NextResponse.json({ 
-        error: 'Missing required fields: action and customerId' 
+    if (!customerEmail || !type) {
+      return NextResponse.json({
+        error: 'Missing required fields: customerEmail and type'
       }, { status: 400 });
     }
 
-    // Retrieve customer from Stripe
-    const customer = await stripe.customers.retrieve(customerId) as Stripe.Customer;
+    // Find customer by email
+    const customers = await stripe.customers.list({ email: customerEmail, limit: 1 });
+
+    if (customers.data.length === 0) {
+      return NextResponse.json({ error: 'Customer not found' }, { status: 404 });
+    }
+
+    const customer = customers.data[0];
     
     if (customer.deleted) {
       return NextResponse.json({ error: 'Customer not found' }, { status: 404 });
@@ -103,21 +109,21 @@ export async function POST(request: NextRequest) {
     let updatedBalance = cashbackBalance;
     let transaction: CashbackTransaction | null = null;
 
-    if (action === 'add_purchase') {
-      // Add new purchase and calculate cashback
+    if (type === 'earned') {
+      // Add cashback directly (employee adding cashback manually)
       if (!amount || amount <= 0) {
-        return NextResponse.json({ 
-          error: 'Invalid amount' 
+        return NextResponse.json({
+          error: 'Invalid amount'
         }, { status: 400 });
       }
 
       if (!description) {
-        return NextResponse.json({ 
-          error: 'Purchase description is required' 
+        return NextResponse.json({
+          error: 'Description is required'
         }, { status: 400 });
       }
 
-      const cashbackEarned = parseFloat((amount * CASHBACK_PERCENTAGE).toFixed(2));
+      const cashbackEarned = parseFloat(amount.toFixed(2));
       updatedBalance = parseFloat((cashbackBalance + cashbackEarned).toFixed(2));
 
       transaction = {
@@ -143,35 +149,35 @@ export async function POST(request: NextRequest) {
 
       compactHistory.unshift(compactTx);
 
-    } else if (action === 'use_cashback') {
+    } else if (type === 'used') {
       // Use cashback credit
-      if (!cashbackUsed || cashbackUsed <= 0) {
-        return NextResponse.json({ 
-          error: 'Invalid cashback amount to use' 
+      if (!amount || amount <= 0) {
+        return NextResponse.json({
+          error: 'Invalid cashback amount to use'
         }, { status: 400 });
       }
 
-      if (cashbackUsed > cashbackBalance) {
-        return NextResponse.json({ 
-          error: 'Insufficient cashback balance' 
+      if (amount > cashbackBalance) {
+        return NextResponse.json({
+          error: 'Insufficient cashback balance'
         }, { status: 400 });
       }
 
       // Validate that the amount doesn't exceed 50% of the balance
       const maxAllowed = parseFloat((cashbackBalance * 0.50).toFixed(2));
-      if (cashbackUsed > maxAllowed) {
-        return NextResponse.json({ 
-          error: `Cannot use more than 50% of available balance. Maximum allowed: $${maxAllowed}` 
+      if (amount > maxAllowed) {
+        return NextResponse.json({
+          error: `Cannot use more than 50% of available balance. Maximum allowed: $${maxAllowed}`
         }, { status: 400 });
       }
 
-      updatedBalance = parseFloat((cashbackBalance - cashbackUsed).toFixed(2));
+      updatedBalance = parseFloat((cashbackBalance - amount).toFixed(2));
 
       transaction = {
         id: `cb_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
         date: new Date().toISOString(),
-        amount: cashbackUsed,
-        cashback: -cashbackUsed,
+        amount: amount,
+        cashback: -amount,
         description: description || 'Cashback credit used',
         employee: decoded.name || 'Unknown Employee',
         employeeEmail: decoded.email || '',
@@ -181,8 +187,8 @@ export async function POST(request: NextRequest) {
       // Create compact version for storage
       const compactTx: CompactTransaction = {
         d: new Date().toISOString().split('T')[0],
-        a: cashbackUsed,
-        c: -cashbackUsed,
+        a: amount,
+        c: -amount,
         desc: (description || 'Credit used').substring(0, 20),
         e: (decoded.name || 'Unknown').split(' ')[0].substring(0, 10),
         t: 'u'
@@ -191,8 +197,8 @@ export async function POST(request: NextRequest) {
       compactHistory.unshift(compactTx);
 
     } else {
-      return NextResponse.json({ 
-        error: 'Invalid action. Use "add_purchase" or "use_cashback"' 
+      return NextResponse.json({
+        error: 'Invalid type. Use "earned" or "used"'
       }, { status: 400 });
     }
 
@@ -202,7 +208,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Update customer metadata in Stripe
-    const updatedCustomer = await stripe.customers.update(customerId, {
+    const updatedCustomer = await stripe.customers.update(customer.id, {
       metadata: {
         ...currentMetadata,
         cashback_balance: updatedBalance.toString(),
@@ -214,9 +220,9 @@ export async function POST(request: NextRequest) {
 
     return NextResponse.json({
       success: true,
-      message: action === 'add_purchase' 
-        ? `Successfully added purchase and earned $${transaction?.cashback} cashback`
-        : `Successfully used $${cashbackUsed} cashback`,
+      message: type === 'earned'
+        ? `Successfully added $${transaction?.cashback} cashback`
+        : `Successfully used $${amount} cashback`,
       data: {
         customerId: customer.id,
         customerEmail: customer.email,

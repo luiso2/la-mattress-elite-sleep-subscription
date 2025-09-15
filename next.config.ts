@@ -22,6 +22,27 @@ const nextConfig: NextConfig = {
       static: 0,
     },
   },
+  // Webpack configuration
+  webpack: (config, { isServer }) => {
+    if (!isServer) {
+      // Don't resolve these modules on the client
+      config.resolve.fallback = {
+        ...config.resolve.fallback,
+        fs: false,
+        net: false,
+        tls: false,
+        dns: false,
+        child_process: false,
+        pg: false,
+        'pg-hstore': false,
+        'pg-native': false,
+      };
+    }
+    // Ignore sequelize dynamic requires
+    config.externals = [...(config.externals || []), 'sequelize'];
+
+    return config;
+  },
   // Headers for CORS and cache control
   async headers() {
     return [

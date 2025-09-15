@@ -3,6 +3,9 @@
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
+import CouponList from '@/components/coupons/CouponList';
+import CouponForm from '@/components/coupons/CouponForm';
+import CouponStats from '@/components/coupons/CouponStats';
 
 interface ProtectorReplacement {
   number: number;
@@ -13,28 +16,21 @@ interface ProtectorReplacement {
 interface Coupon {
   id: number;
   code: string;
-  discount_type: string;
-  discount_value: string;
+  discountType: string;
+  discountValue: number;
   description: string;
   status: string;
-  valid_from: string;
-  valid_until: string;
-  created_at: string;
-  current_uses: number;
-  max_uses: number | null;
-  minimum_purchase: number | null;
-  customer: {
+  validFrom: string;
+  validUntil: string;
+  createdAt: string;
+  currentUses: number;
+  maxUses: number | null;
+  minimumPurchase: number | null;
+  customer?: {
     id: number;
     name: string;
     email: string;
   };
-}
-
-interface CouponsData {
-  success: boolean;
-  count: number;
-  coupons: Coupon[];
-  error?: string;
 }
 
 interface CashbackTransaction {
@@ -78,7 +74,7 @@ interface CustomerData {
     date: string;
     employee: string;
   };
-  coupons?: CouponsData;
+  coupons?: Coupon[];
   stripeDataError?: string;
 }
 
@@ -90,7 +86,6 @@ export default function EmployeeDashboard() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [confirmLoading, setConfirmLoading] = useState(false);
-  const [couponActionLoading, setCouponActionLoading] = useState<string | null>(null);
   const [showCashbackModal, setShowCashbackModal] = useState(false);
   const [cashbackAmount, setCashbackAmount] = useState('');
   const [cashbackDescription, setCashbackDescription] = useState('');
@@ -98,198 +93,341 @@ export default function EmployeeDashboard() {
   const [showUseCashbackModal, setShowUseCashbackModal] = useState(false);
   const [useCashbackAmount, setUseCashbackAmount] = useState('');
   const [useCashbackDescription, setUseCashbackDescription] = useState('');
+  const [showCouponForm, setShowCouponForm] = useState(false);
+  const [coupons, setCoupons] = useState<Coupon[]>([]);
+  const [couponStats, setCouponStats] = useState<any>(null);
+  const [statsLoading, setStatsLoading] = useState(false);
+  const [successMessage, setSuccessMessage] = useState('');
 
   useEffect(() => {
     const token = localStorage.getItem('employeeToken');
     const name = localStorage.getItem('employeeName');
-    
-    if (!token) {
+
+    if (!token || !name) {
       router.push('/employee/login');
       return;
     }
-    
-    setEmployeeName(name || 'Employee');
+
+    setEmployeeName(name);
+    fetchCouponStats();
   }, [router]);
+
+  const fetchCouponStats = async () => {
+    try {
+      setStatsLoading(true);
+      const token = localStorage.getItem('employeeToken');
+      const response = await fetch('/api/coupons/stats', {
+        headers: {
+          'Authorization': `Bearer ${token}`,
+        },
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        setCouponStats(data.stats);
+      }
+    } catch (error) {
+      console.error('Failed to fetch coupon stats:', error);
+    } finally {
+      setStatsLoading(false);
+    }
+  };
 
   const handleSearch = async (e: React.FormEvent) => {
     e.preventDefault();
-    setError('');
+    if (!searchEmail.trim()) return;
+
     setLoading(true);
-    setCustomerData(null);
+    setError('');
+    setSuccessMessage('');
 
     try {
       const token = localStorage.getItem('employeeToken');
       const response = await fetch('/api/employee/customer-search', {
         method: 'POST',
         headers: {
-          'Content-Type': 'application/json',
           'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json',
         },
-        body: JSON.stringify({ email: searchEmail }),
+        body: JSON.stringify({ email: searchEmail.trim() }),
       });
 
-      const data = await response.json();
+      const result = await response.json();
 
-      if (response.ok && data.success) {
-        // Fetch cashback data if customer exists
-        if (data.data.customer) {
-          const cashbackResponse = await fetch(`/api/employee/cashback?customerId=${data.data.customer.id}`, {
-            headers: {
-              'Authorization': `Bearer ${token}`,
-            },
-          });
-          
-          if (cashbackResponse.ok) {
-            const cashbackData = await cashbackResponse.json();
-            data.data.cashback = {
-              balance: cashbackData.data.cashbackBalance,
-              history: cashbackData.data.cashbackHistory,
-              lastUpdate: cashbackData.data.lastUpdate
-            };
-          }
+      if (response.ok && result.success) {
+        // The actual data is in result.data
+        const data = result.data;
+        setCustomerData(data);
+        // Set coupons from the response directly and normalize the data
+        if (data.coupons && data.coupons.coupons) {
+          const normalizedCoupons = data.coupons.coupons.map((coupon: any) => ({
+            id: coupon.id,
+            code: coupon.code,
+            discountType: coupon.discount_type || coupon.discountType,
+            discountValue: parseFloat(coupon.discount_value || coupon.discountValue || 0),
+            description: coupon.description,
+            status: coupon.status,
+            validFrom: coupon.valid_from || coupon.validFrom,
+            validUntil: coupon.valid_until || coupon.validUntil,
+            currentUses: coupon.current_uses || coupon.currentUses || 0,
+            maxUses: coupon.max_uses || coupon.maxUses || null,
+            minimumPurchase: parseFloat(coupon.minimum_purchase || coupon.minimumPurchase || 0),
+            customer: coupon.customer
+          }));
+          setCoupons(normalizedCoupons);
+        } else {
+          setCoupons([]);
         }
-        setCustomerData(data.data);
       } else {
-        setError(data.error || 'Customer not found');
+        setError(result.error || 'Customer not found');
+        setCustomerData(null);
+        setCoupons([]);
       }
-    } catch (err) {
+    } catch (error) {
+      console.error('Search error:', error);
       setError('Failed to search customer');
+      setCustomerData(null);
     } finally {
       setLoading(false);
     }
   };
 
-  const handleConfirmCredit = async () => {
-    if (!customerData || !customerData.customer || !customerData.credits?.reserved) {
-      return;
+  const fetchCustomerCoupons = async (email: string) => {
+    try {
+      const token = localStorage.getItem('employeeToken');
+      const response = await fetch(`/api/coupons?email=${encodeURIComponent(email)}`, {
+        headers: {
+          'Authorization': `Bearer ${token}`,
+        },
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        setCoupons(data.coupons || []);
+      }
+    } catch (error) {
+      console.error('Failed to fetch customer coupons:', error);
     }
+  };
+
+  const handleConfirmCredit = async () => {
+    if (!customerData?.credits) return;
 
     setConfirmLoading(true);
-    setError('');
-
     try {
       const token = localStorage.getItem('employeeToken');
       const response = await fetch('/api/employee/confirm-credit', {
         method: 'POST',
         headers: {
-          'Content-Type': 'application/json',
           'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json',
         },
-        body: JSON.stringify({ 
-          customerId: customerData.customer.id,
-          amount: customerData.credits.reserved,
+        body: JSON.stringify({
+          customerEmail: customerData.email,
+          creditAmount: customerData.credits.reserved
         }),
       });
 
       const data = await response.json();
 
-      if (response.ok && data.success) {
-        // Refresh customer data
-        await handleSearch(new Event('submit') as any);
-        alert(`Successfully confirmed $${customerData.credits.reserved} credit usage!`);
+      if (response.ok) {
+        setSuccessMessage('Credit confirmed successfully!');
+        handleSearch(new Event('submit') as any);
       } else {
         setError(data.error || 'Failed to confirm credit');
       }
-    } catch (err) {
-      setError('Failed to confirm credit usage');
+    } catch (error) {
+      console.error('Confirm credit error:', error);
+      setError('Failed to confirm credit');
     } finally {
       setConfirmLoading(false);
     }
   };
 
   const handleAddCashback = async () => {
-    if (!customerData?.customer || !cashbackAmount || !cashbackDescription) {
-      setError('Please fill all required fields');
+    const purchaseAmount = parseFloat(cashbackAmount);
+    if (isNaN(purchaseAmount) || purchaseAmount <= 0) {
+      setError('Please enter a valid purchase amount');
       return;
     }
 
-    setCashbackLoading(true);
-    setError('');
+    // Calculate 10% cashback
+    const cashbackEarned = parseFloat((purchaseAmount * 0.10).toFixed(2));
 
+    setCashbackLoading(true);
     try {
       const token = localStorage.getItem('employeeToken');
       const response = await fetch('/api/employee/cashback', {
         method: 'POST',
         headers: {
-          'Content-Type': 'application/json',
           'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          action: 'add_purchase',
-          customerId: customerData.customer.id,
-          amount: parseFloat(cashbackAmount),
-          description: cashbackDescription
+          customerEmail: customerData?.email,
+          amount: cashbackEarned, // Send the calculated cashback amount
+          description: `${cashbackDescription} - Purchase: $${purchaseAmount}`,
+          type: 'earned'
         }),
       });
 
       const data = await response.json();
 
-      if (response.ok && data.success) {
-        alert(data.message);
+      if (response.ok) {
+        setSuccessMessage(`Purchase added! Customer earned $${cashbackEarned} cashback (10% of $${purchaseAmount})`);
         setShowCashbackModal(false);
         setCashbackAmount('');
         setCashbackDescription('');
-        // Refresh customer data
-        await handleSearch(new Event('submit') as any);
+        handleSearch(new Event('submit') as any);
       } else {
-        setError(data.error || 'Failed to add cashback');
+        setError(data.error || 'Failed to add purchase');
       }
-    } catch (err) {
-      setError('Failed to process cashback');
+    } catch (error) {
+      console.error('Add purchase error:', error);
+      setError('Failed to add purchase');
     } finally {
       setCashbackLoading(false);
     }
   };
 
   const handleUseCashback = async () => {
-    if (!customerData?.customer || !useCashbackAmount) {
-      setError('Please enter the amount to use');
+    const amount = parseFloat(useCashbackAmount);
+    if (isNaN(amount) || amount <= 0) {
+      setError('Please enter a valid amount');
       return;
     }
 
-    const amount = parseFloat(useCashbackAmount);
-    const maxAllowed = (customerData.cashback?.balance || 0) * 0.50;
-    
-    if (amount > maxAllowed) {
-      setError(`Cannot update more than 50% of balance. Maximum allowed: $${maxAllowed.toFixed(2)}`);
+    if (customerData?.cashback && amount > customerData.cashback.balance) {
+      setError('Amount exceeds available balance');
       return;
     }
 
     setCashbackLoading(true);
-    setError('');
-
     try {
       const token = localStorage.getItem('employeeToken');
       const response = await fetch('/api/employee/cashback', {
         method: 'POST',
         headers: {
-          'Content-Type': 'application/json',
           'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          action: 'use_cashback',
-          customerId: customerData.customer.id,
-          cashbackUsed: parseFloat(useCashbackAmount),
-          description: useCashbackDescription || 'Cashback credit used in store'
+          customerEmail: customerData?.email,
+          amount,
+          description: useCashbackDescription || 'Cashback redemption',
+          type: 'used'
         }),
       });
 
       const data = await response.json();
 
-      if (response.ok && data.success) {
-        alert(data.message);
+      if (response.ok) {
+        setSuccessMessage('Cashback used successfully!');
         setShowUseCashbackModal(false);
         setUseCashbackAmount('');
         setUseCashbackDescription('');
-        // Refresh customer data
-        await handleSearch(new Event('submit') as any);
+        handleSearch(new Event('submit') as any);
       } else {
         setError(data.error || 'Failed to use cashback');
       }
-    } catch (err) {
-      setError('Failed to process cashback usage');
+    } catch (error) {
+      console.error('Use cashback error:', error);
+      setError('Failed to use cashback');
     } finally {
       setCashbackLoading(false);
+    }
+  };
+
+  const handleCreateCoupon = async (formData: any) => {
+    try {
+      const token = localStorage.getItem('employeeToken');
+      const response = await fetch('/api/coupons', {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(formData),
+      });
+
+      const data = await response.json();
+
+      if (response.ok) {
+        setSuccessMessage('Coupon created successfully!');
+        setShowCouponForm(false);
+        fetchCustomerCoupons(formData.customerEmail);
+        fetchCouponStats();
+      } else {
+        throw new Error(data.error || 'Failed to create coupon');
+      }
+    } catch (error: any) {
+      throw error;
+    }
+  };
+
+  const handleMarkCouponUsed = async (couponId: number) => {
+    try {
+      const token = localStorage.getItem('employeeToken');
+      const response = await fetch('/api/employee/coupon-action', {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          action: 'mark_used',
+          couponId: couponId.toString(),
+        }),
+      });
+
+      const data = await response.json();
+
+      if (response.ok) {
+        setSuccessMessage('Coupon marked as used!');
+        if (customerData?.customer) {
+          fetchCustomerCoupons(customerData.customer.email);
+        }
+        fetchCouponStats();
+      } else {
+        setError(data.error || 'Failed to mark coupon as used');
+      }
+    } catch (error) {
+      console.error('Mark coupon used error:', error);
+      setError('Failed to mark coupon as used');
+    }
+  };
+
+  const handleDeleteCoupon = async (couponId: number) => {
+    if (!confirm('Are you sure you want to delete this coupon?')) return;
+
+    try {
+      const token = localStorage.getItem('employeeToken');
+      const response = await fetch('/api/employee/coupon-action', {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          action: 'delete',
+          couponId: couponId.toString(),
+        }),
+      });
+
+      const data = await response.json();
+
+      if (response.ok) {
+        setSuccessMessage('Coupon deleted successfully!');
+        if (customerData?.customer) {
+          fetchCustomerCoupons(customerData.customer.email);
+        }
+        fetchCouponStats();
+      } else {
+        setError(data.error || 'Failed to delete coupon');
+      }
+    } catch (error) {
+      console.error('Delete coupon error:', error);
+      setError('Failed to delete coupon');
     }
   };
 
@@ -299,114 +437,27 @@ export default function EmployeeDashboard() {
     router.push('/employee/login');
   };
 
-  const handleCouponAction = async (action: 'mark_used' | 'delete', coupon: Coupon) => {
-    const actionKey = `${action}_${coupon.id}`;
-    setCouponActionLoading(actionKey);
-    setError('');
-
-    try {
-      const token = localStorage.getItem('employeeToken');
-      const response = await fetch('/api/employee/coupon-action', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`,
-        },
-        body: JSON.stringify({ 
-          action,
-          couponId: coupon.id,
-          couponCode: coupon.code
-        }),
-      });
-
-      const data = await response.json();
-
-      if (response.ok && data.success) {
-        // Refresh customer data to show updated coupon status
-        await handleSearch(new Event('submit') as any);
-        
-        const actionText = action === 'mark_used' ? 'marked as used' : 'deleted';
-        alert(`Coupon ${coupon.code} successfully ${actionText}!`);
-      } else {
-        setError(data.error || `Failed to ${action} coupon`);
-      }
-    } catch (err) {
-      setError(`Failed to ${action} coupon`);
-    } finally {
-      setCouponActionLoading(null);
-    }
-  };
-
-  const confirmCouponAction = (action: 'mark_used' | 'delete', coupon: Coupon) => {
-    const actionText = action === 'mark_used' ? 'mark as used' : 'delete';
-    const confirmText = `Are you sure you want to ${actionText} the coupon "${coupon.code}"?\n\nThis action cannot be undone.`;
-    
-    if (window.confirm(confirmText)) {
-      handleCouponAction(action, coupon);
-    }
-  };
-
-  const getStatusColor = (status: string) => {
-    switch (status.toLowerCase()) {
-      case 'active':
-        return 'bg-green-100 text-green-800';
-      case 'used':
-        return 'bg-gray-100 text-gray-800';
-      case 'expired':
-        return 'bg-red-100 text-red-800';
-      case 'cancelled':
-        return 'bg-orange-100 text-orange-800';
-      default:
-        return 'bg-gray-100 text-gray-600';
-    }
-  };
-
-  const formatDiscountValue = (coupon: Coupon) => {
-    if (coupon.discount_type === 'percentage') {
-      return `${coupon.discount_value}%`;
-    } else {
-      return `$${coupon.discount_value}`;
-    }
-  };
-
   return (
     <div className="min-h-screen bg-gray-50">
-      {/* White Header with Logo */}
+      {/* Header */}
       <nav className="bg-white shadow-md">
         <div className="container mx-auto px-4">
           <div className="flex items-center justify-between h-16">
             <div className="flex items-center">
               <Link href="/" className="flex items-center mr-8">
-                <img 
-                  src="/logo.png" 
-                  alt="LA Mattress" 
-                  className="h-10 w-auto"
-                  onError={(e) => {
-                    e.currentTarget.style.display = 'none';
-                    const textLogo = document.createElement('div');
-                    textLogo.className = 'text-xl font-bold text-[#1e40af]';
-                    textLogo.textContent = 'LA MATTRESS';
-                    e.currentTarget.parentElement?.appendChild(textLogo);
-                  }}
+                <img
+                  src="/logo.png"
+                  alt="LA Mattress"
+                  className="h-10 mr-3"
                 />
+                <span className="text-xl font-bold text-[#1e40af]">Employee Portal</span>
               </Link>
-              <div className="hidden md:flex items-center space-x-2">
-                <span className="text-gray-500 text-sm">Employee Portal</span>
-                <span className="text-gray-400">•</span>
-                <span className="text-[#1e40af] font-semibold text-sm">{employeeName}</span>
-              </div>
             </div>
-            
-            <div className="flex items-center space-x-4">
-              <Link 
-                href="/" 
-                className="hidden md:block text-gray-600 hover:text-gray-800 text-sm transition-colors"
-              >
-                Main Site
-              </Link>
+            <div className="flex items-center gap-4">
+              <span className="text-gray-700">Welcome, {employeeName}</span>
               <button
                 onClick={handleLogout}
-                className="bg-red-500 hover:bg-red-600 text-white px-4 py-2 rounded-lg text-sm font-semibold transition-colors"
+                className="px-4 py-2 bg-red-500 text-white rounded hover:bg-red-600 transition-colors"
               >
                 Logout
               </button>
@@ -415,581 +466,355 @@ export default function EmployeeDashboard() {
         </div>
       </nav>
 
-      {/* Page Title Bar */}
-      <div className="bg-[#1e40af] text-white">
-        <div className="container mx-auto px-4 py-6">
-          <h1 className="text-2xl font-bold">Credit Management System</h1>
-          <p className="text-white/80 text-sm mt-1">Search and manage customer Elite Sleep+ credits</p>
-        </div>
-      </div>
-
       <div className="container mx-auto px-4 py-8">
-        {/* Search Section */}
+        {/* Coupon Statistics */}
+        <div className="mb-8">
+          <CouponStats stats={couponStats || {
+            totalCoupons: 0,
+            activeCoupons: 0,
+            usedCoupons: 0,
+            expiredCoupons: 0,
+            totalDiscountGiven: 0
+          }} loading={statsLoading} />
+        </div>
+
+        {/* Customer Search */}
         <div className="bg-white rounded-lg shadow-md p-6 mb-8">
-          <h2 className="text-xl font-bold text-gray-800 mb-4 flex items-center">
-            <svg className="w-5 h-5 mr-2 text-[#00bcd4]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
-            </svg>
-            Customer Credit Lookup
-          </h2>
-          
+          <h2 className="text-2xl font-bold text-[#1e40af] mb-4">Customer Search</h2>
           <form onSubmit={handleSearch} className="flex gap-4">
             <input
               type="email"
-              placeholder="Enter customer email address"
               value={searchEmail}
               onChange={(e) => setSearchEmail(e.target.value)}
+              placeholder="Enter customer email"
+              className="flex-1 px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#00bcd4]"
               required
-              className="flex-1 px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#00bcd4] focus:border-transparent"
             />
             <button
               type="submit"
               disabled={loading}
-              className="px-8 py-3 bg-[#00bcd4] text-white rounded-lg hover:bg-[#00bcd4]/90 transition-colors disabled:opacity-50 font-semibold"
+              className="px-6 py-2 bg-[#00bcd4] text-white rounded-lg hover:bg-[#00acc1] disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
             >
               {loading ? 'Searching...' : 'Search'}
             </button>
           </form>
-
-          {error && (
-            <div className="mt-4 bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg">
-              {error}
-            </div>
-          )}
         </div>
 
-        {/* Customer Data Section */}
+        {/* Success/Error Messages */}
+        {successMessage && (
+          <div className="bg-green-50 border border-green-200 text-green-700 px-4 py-3 rounded mb-4">
+            {successMessage}
+          </div>
+        )}
+        {error && (
+          <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded mb-4">
+            {error}
+          </div>
+        )}
+
+        {/* Customer Information */}
         {customerData && (
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-            {/* Customer Info */}
-            {customerData.customer ? (
+          <div className="space-y-6">
+            {/* Customer Details */}
+            <div className="bg-white rounded-lg shadow-md p-6">
+              <h3 className="text-xl font-bold text-[#1e40af] mb-4">Customer Information</h3>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <p className="text-gray-600">Name</p>
+                  <p className="font-semibold">{customerData.customer?.name || 'N/A'}</p>
+                </div>
+                <div>
+                  <p className="text-gray-600">Email</p>
+                  <p className="font-semibold">{customerData.email}</p>
+                </div>
+                <div>
+                  <p className="text-gray-600">Customer ID</p>
+                  <p className="font-semibold">{customerData.customer?.id || 'N/A'}</p>
+                </div>
+                <div>
+                  <p className="text-gray-600">Last Search</p>
+                  <p className="font-semibold">{new Date(customerData.searchedAt).toLocaleString()}</p>
+                </div>
+              </div>
+            </div>
+
+            {/* Credits Section */}
+            {customerData.credits && (
               <div className="bg-white rounded-lg shadow-md p-6">
-                <h3 className="text-lg font-bold text-gray-800 mb-4 flex items-center">
-                  <svg className="w-5 h-5 mr-2 text-[#1e40af]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
-                  </svg>
-                  Customer Information
-                </h3>
-                <div className="space-y-3">
-                  <div className="flex justify-between py-2 border-b">
-                    <span className="text-gray-600">Name:</span>
-                    <span className="font-semibold">{customerData.customer.name}</span>
+                <h3 className="text-xl font-bold text-[#1e40af] mb-4">Store Credits</h3>
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-4">
+                  <div className="text-center p-4 bg-blue-50 rounded">
+                    <p className="text-2xl font-bold text-blue-600">${customerData.credits.total}</p>
+                    <p className="text-gray-600">Total</p>
                   </div>
-                  <div className="flex justify-between py-2 border-b">
-                    <span className="text-gray-600">Email:</span>
-                    <span className="font-semibold">{customerData.customer.email}</span>
+                  <div className="text-center p-4 bg-green-50 rounded">
+                    <p className="text-2xl font-bold text-green-600">${customerData.credits.available}</p>
+                    <p className="text-gray-600">Available</p>
                   </div>
-                  <div className="flex justify-between py-2 border-b">
-                    <span className="text-gray-600">Customer ID:</span>
-                    <span className="font-mono text-sm">{customerData.customer.id}</span>
+                  <div className="text-center p-4 bg-yellow-50 rounded">
+                    <p className="text-2xl font-bold text-yellow-600">${customerData.credits.reserved}</p>
+                    <p className="text-gray-600">Reserved</p>
                   </div>
-                </div>
-              </div>
-            ) : (
-              <div className="bg-yellow-50 border border-yellow-200 rounded-lg shadow-md p-6">
-                <h3 className="text-lg font-bold text-yellow-800 mb-4 flex items-center">
-                  <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L3.732 16.5c-.77.833.192 2.5 1.732 2.5z" />
-                  </svg>
-                  Stripe Customer Not Found
-                </h3>
-                <div className="space-y-3">
-                  <div className="flex justify-between py-2 border-b">
-                    <span className="text-gray-600">Email Searched:</span>
-                    <span className="font-semibold">{customerData.email}</span>
-                  </div>
-                  <div className="bg-yellow-100 rounded p-3 text-sm text-yellow-800">
-                    <p><strong>Note:</strong> This customer was not found in Stripe, but coupon data is still being searched independently.</p>
-                    {customerData.stripeDataError && (
-                      <p className="mt-1"><strong>Details:</strong> {customerData.stripeDataError}</p>
-                    )}
+                  <div className="text-center p-4 bg-gray-50 rounded">
+                    <p className="text-2xl font-bold text-gray-600">${customerData.credits.used}</p>
+                    <p className="text-gray-600">Used</p>
                   </div>
                 </div>
-              </div>
-            )}
-
-            {/* Cashback Information - 20% Benefit */}
-            {customerData.customer && (
-              <div className="bg-gradient-to-br from-purple-50 to-purple-100 rounded-lg shadow-md p-6 border border-purple-200">
-                <h3 className="text-lg font-bold text-purple-800 mb-4 flex items-center justify-between">
-                  <div className="flex items-center">
-                    <svg className="w-5 h-5 mr-2 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-                    </svg>
-                    10% Cashback Balance
-                  </div>
-                  <span className="text-xs bg-purple-600 text-white px-2 py-1 rounded-full">Elite Benefit - 10%</span>
-                </h3>
-                <div className="space-y-3">
-                  <div className="bg-white rounded-lg p-4">
-                    <div className="flex justify-between items-center mb-3">
-                      <span className="text-gray-700 font-medium">Current Balance:</span>
-                      <span className="font-bold text-2xl text-purple-600">
-                        ${customerData.cashback?.balance || 0}
-                      </span>
-                    </div>
-                    
-                    <div className="flex gap-2">
-                      <button
-                        onClick={() => setShowCashbackModal(true)}
-                        className="flex-1 px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors font-semibold text-sm"
-                      >
-                        + Add Purchase
-                      </button>
-                      <button
-                        onClick={() => setShowUseCashbackModal(true)}
-                        disabled={!customerData.cashback?.balance || customerData.cashback.balance === 0}
-                        className="flex-1 px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors font-semibold text-sm disabled:bg-gray-400 disabled:cursor-not-allowed"
-                      >
-                        Update Used
-                      </button>
-                    </div>
-                  </div>
-
-                  {/* Recent Transactions */}
-                  {customerData.cashback?.history && customerData.cashback.history.length > 0 && (
-                    <div className="bg-white rounded-lg p-3">
-                      <h4 className="text-sm font-semibold text-gray-700 mb-2">Recent Transactions:</h4>
-                      <div className="space-y-2 max-h-40 overflow-y-auto">
-                        {customerData.cashback.history.slice(0, 5).map((tx) => (
-                          <div key={tx.id} className="text-xs border-b pb-2">
-                            <div className="flex justify-between">
-                              <span className="font-medium">{tx.description}</span>
-                              <span className={tx.type === 'earned' ? 'text-green-600 font-semibold' : 'text-red-600 font-semibold'}>
-                                {tx.type === 'earned' ? '+' : ''}{tx.cashback.toFixed(2)}
-                              </span>
-                            </div>
-                            <div className="text-gray-500 mt-1">
-                              {new Date(tx.date).toLocaleDateString()} • {tx.employee}
-                            </div>
-                          </div>
-                        ))}
-                      </div>
-                    </div>
-                  )}
-                </div>
-              </div>
-            )}
-
-            {/* Credit Information */}
-            {customerData.credits ? (
-              <div className="bg-white rounded-lg shadow-md p-6">
-                <h3 className="text-lg font-bold text-gray-800 mb-4 flex items-center">
-                  <svg className="w-5 h-5 mr-2 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-                  </svg>
-                  Credit Balance
-                </h3>
-                <div className="space-y-3">
-                  <div className="flex justify-between py-2 border-b">
-                    <span className="text-gray-600">Total Earned:</span>
-                    <span className="font-semibold">${customerData.credits.total}</span>
-                  </div>
-                  <div className="flex justify-between py-2 border-b">
-                    <span className="text-gray-600">Already Used:</span>
-                    <span className="font-semibold text-red-600">-${customerData.credits.used}</span>
-                  </div>
-                  <div className="flex justify-between py-2 border-b">
-                    <span className="text-gray-600">Reserved for Use:</span>
-                    <span className="font-semibold text-orange-600">${customerData.credits.reserved}</span>
-                  </div>
-                  <div className="flex justify-between py-3 bg-green-50 px-3 rounded">
-                    <span className="text-gray-700 font-medium">Available:</span>
-                    <span className="font-bold text-green-600 text-xl">${customerData.credits.available}</span>
-                  </div>
-                </div>
-              </div>
-            ) : (
-              <div className="bg-gray-50 border border-gray-200 rounded-lg shadow-md p-6">
-                <h3 className="text-lg font-bold text-gray-600 mb-4 flex items-center">
-                  <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-                  </svg>
-                  No Credit Data Available
-                </h3>
-                <div className="text-center text-gray-500">
-                  <p>Credit information is not available for this email.</p>
-                  <p className="text-sm mt-1">This customer may not have a Stripe subscription.</p>
-                </div>
-              </div>
-            )}
-
-            {/* Credit Confirmation Section */}
-            {customerData.credits && customerData.credits.reserved > 0 && (
-              <div className="lg:col-span-2 bg-orange-50 border-2 border-orange-200 rounded-lg p-6">
-                <h3 className="text-xl font-bold text-orange-700 mb-4">⚠️ Pending Credit Usage</h3>
-                <div className="bg-white rounded-lg p-6 mb-4">
-                  <p className="text-gray-700 mb-4">
-                    Customer has <span className="font-bold text-orange-600">${customerData.credits.reserved}</span> reserved 
-                    for in-store purchase.
-                  </p>
-                  <div className="bg-yellow-50 border border-yellow-200 rounded p-4 mb-4">
-                    <p className="text-sm text-yellow-800">
-                      <strong>Important:</strong> Only confirm after the customer has completed their purchase.
-                    </p>
-                  </div>
+                {customerData.credits.reserved > 0 && (
                   <button
                     onClick={handleConfirmCredit}
                     disabled={confirmLoading}
-                    className="w-full py-3 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors disabled:opacity-50 font-semibold"
+                    className="w-full px-4 py-2 bg-green-500 text-white rounded-lg hover:bg-green-600 disabled:opacity-50 transition-colors"
                   >
-                    {confirmLoading ? 'Processing...' : `Confirm $${customerData.credits.reserved} Credit Usage`}
+                    {confirmLoading ? 'Confirming...' : `Confirm Reserved Credit ($${customerData.credits.reserved})`}
                   </button>
-                </div>
+                )}
               </div>
             )}
 
-            {/* Mattress Protector Replacements */}
-            {customerData.protectorReplacements && (
-              <div className="lg:col-span-2 bg-white rounded-lg shadow-md p-6">
-                <h3 className="text-lg font-bold text-gray-800 mb-4 flex items-center">
-                  <svg className="w-5 h-5 mr-2 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
-                  </svg>
-                  Mattress Protector Replacements
-                </h3>
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
-                  {customerData.protectorReplacements.protectors.map((protector) => (
-                    <div key={protector.number} className="border rounded-lg p-3">
-                      <div className="text-sm font-semibold text-gray-700 mb-1">
-                        Protector #{protector.number}
-                      </div>
-                      {protector.used ? (
-                        <div>
-                          <span className="inline-block px-2 py-1 bg-red-100 text-red-700 rounded-full text-xs font-semibold">
-                            Used
-                          </span>
-                          {protector.date && (
-                            <p className="text-xs text-gray-500 mt-1">
-                              {new Date(protector.date).toLocaleDateString()}
+            {/* Cashback Section */}
+            <div className="bg-white rounded-lg shadow-md p-6">
+                <div className="flex justify-between items-center mb-4">
+                  <h3 className="text-xl font-bold text-[#1e40af]">Cashback</h3>
+                  <div className="flex gap-2">
+                    <button
+                      onClick={() => setShowCashbackModal(true)}
+                      className="px-4 py-2 bg-green-500 text-white rounded hover:bg-green-600 transition-colors"
+                    >
+                      Add Purchase
+                    </button>
+                    <button
+                      onClick={() => setShowUseCashbackModal(true)}
+                      disabled={!customerData.cashback || customerData.cashback.balance <= 0}
+                      className="px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                    >
+                      Use Cashback
+                    </button>
+                  </div>
+                </div>
+                <div className="text-center p-6 bg-gradient-to-r from-green-50 to-blue-50 rounded-lg mb-4">
+                  <p className="text-3xl font-bold text-green-600">${(customerData.cashback?.balance || 0).toFixed(2)}</p>
+                  <p className="text-gray-600">Current Balance</p>
+                </div>
+
+                {/* Transaction History */}
+                {customerData.cashback?.history && customerData.cashback.history.length > 0 ? (
+                  <div>
+                    <h4 className="font-semibold text-gray-700 mb-2">Recent Transactions</h4>
+                    <div className="space-y-2 max-h-60 overflow-y-auto">
+                      {customerData.cashback.history.map((transaction) => (
+                        <div key={transaction.id} className={`p-3 rounded ${transaction.type === 'earned' ? 'bg-green-50' : 'bg-red-50'}`}>
+                          <div className="flex justify-between items-start">
+                            <div>
+                              <p className="font-semibold">{transaction.description}</p>
+                              <p className="text-sm text-gray-600">
+                                {new Date(transaction.date).toLocaleDateString()} - {transaction.employee}
+                              </p>
+                            </div>
+                            <p className={`font-bold ${transaction.type === 'earned' ? 'text-green-600' : 'text-red-600'}`}>
+                              {transaction.type === 'earned' ? '+' : '-'}${transaction.cashback.toFixed(2)}
                             </p>
-                          )}
+                          </div>
                         </div>
-                      ) : (
-                        <span className="inline-block px-2 py-1 bg-green-100 text-green-700 rounded-full text-xs font-semibold">
-                          Available
-                        </span>
+                      ))}
+                    </div>
+                  </div>
+                ) : (
+                  <div className="text-center text-gray-500 py-4">
+                    <p>No cashback transactions yet</p>
+                    <p className="text-sm">Add a purchase to start earning cashback!</p>
+                  </div>
+                )}
+            </div>
+
+            {/* Coupons Section */}
+            <div className="bg-white rounded-lg shadow-md p-6">
+              <div className="flex justify-between items-center mb-6">
+                <h3 className="text-xl font-bold text-[#1e40af]">Customer Coupons</h3>
+                <button
+                  onClick={() => setShowCouponForm(true)}
+                  className="px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600 transition-colors"
+                >
+                  Create New Coupon
+                </button>
+              </div>
+
+              <CouponList
+                coupons={coupons}
+                showActions={true}
+                onMarkUsed={handleMarkCouponUsed}
+                onDelete={handleDeleteCoupon}
+                emptyMessage="No coupons found for this customer"
+              />
+            </div>
+
+            {/* Protector Replacements */}
+            {customerData.protectorReplacements && (
+              <div className="bg-white rounded-lg shadow-md p-6">
+                <h3 className="text-xl font-bold text-[#1e40af] mb-4">Protector Replacements</h3>
+                <div className="grid grid-cols-3 gap-4 mb-4">
+                  <div className="text-center p-4 bg-blue-50 rounded">
+                    <p className="text-2xl font-bold text-blue-600">{customerData.protectorReplacements.total}</p>
+                    <p className="text-gray-600">Total</p>
+                  </div>
+                  <div className="text-center p-4 bg-green-50 rounded">
+                    <p className="text-2xl font-bold text-green-600">{customerData.protectorReplacements.available}</p>
+                    <p className="text-gray-600">Available</p>
+                  </div>
+                  <div className="text-center p-4 bg-gray-50 rounded">
+                    <p className="text-2xl font-bold text-gray-600">{customerData.protectorReplacements.used}</p>
+                    <p className="text-gray-600">Used</p>
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-3 gap-2">
+                  {customerData.protectorReplacements.protectors.map((protector) => (
+                    <div
+                      key={protector.number}
+                      className={`p-3 rounded text-center ${
+                        protector.used
+                          ? 'bg-gray-100 text-gray-500'
+                          : 'bg-green-50 text-green-700 font-semibold'
+                      }`}
+                    >
+                      <p>Protector #{protector.number}</p>
+                      {protector.used && protector.date && (
+                        <p className="text-xs">Used: {new Date(protector.date).toLocaleDateString()}</p>
                       )}
                     </div>
                   ))}
                 </div>
-                <div className="bg-gray-50 rounded-lg p-3">
-                  <div className="flex justify-between text-sm">
-                    <span className="text-gray-600">Total Used:</span>
-                    <span className="font-semibold">{customerData.protectorReplacements.used} of {customerData.protectorReplacements.total}</span>
-                  </div>
-                  <div className="flex justify-between text-sm mt-1">
-                    <span className="text-gray-600">Available:</span>
-                    <span className="font-semibold text-green-600">{customerData.protectorReplacements.available}</span>
-                  </div>
-                </div>
-              </div>
-            )}
-
-            {/* Customer Coupons */}
-            {customerData.coupons && customerData.coupons.success && (
-              <div className="lg:col-span-2 bg-white rounded-lg shadow-md p-6">
-                <h3 className="text-lg font-bold text-gray-800 mb-4 flex items-center">
-                  <svg className="w-5 h-5 mr-2 text-orange-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 7h.01M7 3h5c.512 0 1.024.195 1.414.586l7 7a2 2 0 010 2.828l-7 7a2 2 0 01-2.828 0l-7-7A1.994 1.994 0 013 12V7a4 4 0 014-4z" />
-                  </svg>
-                  Customer Coupons ({customerData.coupons.count})
-                </h3>
-                
-                {customerData.coupons.count > 0 ? (
-                  <div className="space-y-4">
-                    {customerData.coupons.coupons.map((coupon) => (
-                      <div key={coupon.id} className="border rounded-lg p-4 hover:bg-gray-50 transition-colors">
-                        <div className="flex items-start justify-between">
-                          <div className="flex-1">
-                            <div className="flex items-center gap-3 mb-2">
-                              <span className="font-mono text-lg font-bold text-gray-800">
-                                {coupon.code}
-                              </span>
-                              <span className={`px-2 py-1 rounded-full text-xs font-semibold ${getStatusColor(coupon.status)}`}>
-                                {coupon.status.toUpperCase()}
-                              </span>
-                              <span className="text-lg font-semibold text-green-600">
-                                {formatDiscountValue(coupon)} OFF
-                              </span>
-                            </div>
-                            
-                            <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm text-gray-600 mb-3">
-                              <div>
-                                <span className="font-medium">Created:</span>
-                                <br />
-                                {new Date(coupon.created_at).toLocaleDateString()}
-                              </div>
-                              
-                              {coupon.valid_until && (
-                                <div>
-                                  <span className="font-medium">Expires:</span>
-                                  <br />
-                                  {new Date(coupon.valid_until).toLocaleDateString()}
-                                </div>
-                              )}
-                              
-                              {coupon.minimum_purchase && (
-                                <div>
-                                  <span className="font-medium">Min Purchase:</span>
-                                  <br />
-                                  ${coupon.minimum_purchase}
-                                </div>
-                              )}
-                              
-                              {coupon.max_uses && (
-                                <div>
-                                  <span className="font-medium">Uses:</span>
-                                  <br />
-                                  {coupon.current_uses} / {coupon.max_uses}
-                                </div>
-                              )}
-                            </div>
-                            
-                            {coupon.description && (
-                              <p className="text-sm text-gray-600 italic mb-3">
-                                {coupon.description}
-                              </p>
-                            )}
-                          </div>
-                          
-                          <div className="flex flex-col gap-2 ml-4">
-                            {coupon.status === 'active' && (
-                              <button
-                                onClick={() => confirmCouponAction('mark_used', coupon)}
-                                disabled={couponActionLoading === `mark_used_${coupon.id}`}
-                                className="px-3 py-1 bg-blue-600 text-white text-sm rounded hover:bg-blue-700 transition-colors disabled:opacity-50 min-w-[100px]"
-                              >
-                                {couponActionLoading === `mark_used_${coupon.id}` ? 'Processing...' : 'Mark as Used'}
-                              </button>
-                            )}
-                            
-                            <button
-                              onClick={() => confirmCouponAction('delete', coupon)}
-                              disabled={couponActionLoading === `delete_${coupon.id}`}
-                              className="px-3 py-1 bg-red-600 text-white text-sm rounded hover:bg-red-700 transition-colors disabled:opacity-50 min-w-[100px]"
-                            >
-                              {couponActionLoading === `delete_${coupon.id}` ? 'Processing...' : 'Delete'}
-                            </button>
-                          </div>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                ) : (
-                  <div className="bg-gray-50 rounded-lg p-6 text-center">
-                    <svg className="w-12 h-12 mx-auto text-gray-400 mb-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 7h.01M7 3h5c.512 0 1.024.195 1.414.586l7 7a2 2 0 010 2.828l-7 7a2 2 0 01-2.828 0l-7-7A1.994 1.994 0 013 12V7a4 4 0 014-4z" />
-                    </svg>
-                    <p className="text-gray-600">No coupons found for this customer</p>
-                  </div>
-                )}
-              </div>
-            )}
-            
-            {/* Coupon Error Display */}
-            {customerData.coupons && !customerData.coupons.success && customerData.coupons.error && (
-              <div className="lg:col-span-2 bg-yellow-50 border border-yellow-200 rounded-lg p-6">
-                <h3 className="text-lg font-bold text-yellow-800 mb-2 flex items-center">
-                  <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L3.732 16.5c-.77.833.192 2.5 1.732 2.5z" />
-                  </svg>
-                  Coupon Data Warning
-                </h3>
-                <p className="text-yellow-700">
-                  Could not retrieve coupon information: {customerData.coupons.error}
-                </p>
-                <p className="text-yellow-600 text-sm mt-1">
-                  Customer data and other services are working normally.
-                </p>
-              </div>
-            )}
-
-            {/* Last Transaction */}
-            {customerData.lastTransaction && (
-              <div className="lg:col-span-2 bg-gray-50 rounded-lg p-6">
-                <h3 className="text-lg font-bold text-gray-700 mb-3">Last Transaction</h3>
-                <div className="flex justify-between items-center">
-                  <div>
-                    <p className="text-gray-600">
-                      Amount: <span className="font-semibold">${customerData.lastTransaction.amount}</span>
-                    </p>
-                    <p className="text-gray-600">
-                      Date: <span className="font-semibold">{new Date(customerData.lastTransaction.date).toLocaleDateString()}</span>
-                    </p>
-                  </div>
-                  <div className="text-right">
-                    <p className="text-gray-600">
-                      Processed by: <span className="font-semibold">{customerData.lastTransaction.employee}</span>
-                    </p>
-                  </div>
-                </div>
               </div>
             )}
           </div>
         )}
 
-        {/* Instructions */}
-        {!customerData && (
-          <div className="bg-blue-50 border border-blue-200 rounded-lg p-6">
-            <h3 className="text-lg font-bold text-blue-800 mb-3">📋 Instructions</h3>
-            <ol className="list-decimal list-inside space-y-2 text-blue-700">
-              <li>Enter the customer's email address in the search box above</li>
-              <li>Review the customer's available credit balance</li>
-              <li>If customer has reserved credit, confirm usage after purchase completion</li>
-              <li>All transactions are logged for audit purposes</li>
-            </ol>
+        {/* Add Purchase Modal */}
+        {showCashbackModal && (
+          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+            <div className="bg-white rounded-lg p-6 w-full max-w-md">
+              <h3 className="text-xl font-bold mb-4">Add Purchase</h3>
+              <p className="text-sm text-gray-600 mb-4">Enter the customer's purchase amount. 10% cashback will be automatically calculated and added.</p>
+              <div className="space-y-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Purchase Amount ($)</label>
+                  <input
+                    type="number"
+                    step="0.01"
+                    value={cashbackAmount}
+                    onChange={(e) => setCashbackAmount(e.target.value)}
+                    className="w-full px-3 py-2 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    placeholder="100.00"
+                  />
+                  {cashbackAmount && !isNaN(parseFloat(cashbackAmount)) && (
+                    <p className="text-sm text-green-600 mt-1">
+                      Cashback: ${(parseFloat(cashbackAmount) * 0.10).toFixed(2)} (10%)
+                    </p>
+                  )}
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Description</label>
+                  <input
+                    type="text"
+                    value={cashbackDescription}
+                    onChange={(e) => setCashbackDescription(e.target.value)}
+                    className="w-full px-3 py-2 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    placeholder="Mattress purchase"
+                  />
+                </div>
+                <div className="flex gap-2">
+                  <button
+                    onClick={handleAddCashback}
+                    disabled={cashbackLoading}
+                    className="flex-1 px-4 py-2 bg-green-500 text-white rounded hover:bg-green-600 disabled:opacity-50"
+                  >
+                    {cashbackLoading ? 'Adding...' : 'Add Purchase'}
+                  </button>
+                  <button
+                    onClick={() => {
+                      setShowCashbackModal(false);
+                      setCashbackAmount('');
+                      setCashbackDescription('');
+                    }}
+                    className="flex-1 px-4 py-2 bg-gray-300 text-gray-700 rounded hover:bg-gray-400"
+                  >
+                    Cancel
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Use Cashback Modal */}
+        {showUseCashbackModal && (
+          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+            <div className="bg-white rounded-lg p-6 w-full max-w-md">
+              <h3 className="text-xl font-bold mb-4">Use Cashback</h3>
+              <p className="text-sm text-gray-600 mb-4">
+                Available Balance: ${customerData?.cashback?.balance.toFixed(2)}
+              </p>
+              <div className="space-y-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Amount ($)</label>
+                  <input
+                    type="number"
+                    step="0.01"
+                    value={useCashbackAmount}
+                    onChange={(e) => setUseCashbackAmount(e.target.value)}
+                    className="w-full px-3 py-2 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    placeholder="0.00"
+                    max={customerData?.cashback?.balance}
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Description</label>
+                  <input
+                    type="text"
+                    value={useCashbackDescription}
+                    onChange={(e) => setUseCashbackDescription(e.target.value)}
+                    className="w-full px-3 py-2 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    placeholder="Purchase with cashback"
+                  />
+                </div>
+                <div className="flex gap-2">
+                  <button
+                    onClick={handleUseCashback}
+                    disabled={cashbackLoading}
+                    className="flex-1 px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600 disabled:opacity-50"
+                  >
+                    {cashbackLoading ? 'Processing...' : 'Use Cashback'}
+                  </button>
+                  <button
+                    onClick={() => {
+                      setShowUseCashbackModal(false);
+                      setUseCashbackAmount('');
+                      setUseCashbackDescription('');
+                    }}
+                    className="flex-1 px-4 py-2 bg-gray-300 text-gray-700 rounded hover:bg-gray-400"
+                  >
+                    Cancel
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Create Coupon Modal */}
+        {showCouponForm && customerData && (
+          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+            <div className="bg-white rounded-lg w-full max-w-2xl max-h-[90vh] overflow-y-auto">
+              <CouponForm
+                onSubmit={handleCreateCoupon}
+                onCancel={() => setShowCouponForm(false)}
+                customerEmail={customerData.customer?.email || customerData.email}
+                customerName={customerData.customer?.name || ''}
+              />
+            </div>
           </div>
         )}
       </div>
-
-      {/* Add Purchase Modal */}
-      {showCashbackModal && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <div className="bg-white rounded-lg p-6 w-full max-w-md">
-            <h3 className="text-xl font-bold text-gray-800 mb-4">Add Customer Purchase</h3>
-            
-            <div className="space-y-4">
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Purchase Amount ($)
-                </label>
-                <input
-                  type="number"
-                  step="0.01"
-                  value={cashbackAmount}
-                  onChange={(e) => setCashbackAmount(e.target.value)}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500"
-                  placeholder="Enter amount"
-                />
-                {cashbackAmount && (
-                  <p className="text-sm text-purple-600 mt-1">
-                    Cashback earned: ${(parseFloat(cashbackAmount) * 0.10).toFixed(2)} (10%)
-                  </p>
-                )}
-              </div>
-              
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  What did the customer purchase?
-                </label>
-                <textarea
-                  value={cashbackDescription}
-                  onChange={(e) => setCashbackDescription(e.target.value)}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500"
-                  rows={3}
-                  placeholder="e.g., King Size Memory Foam Mattress"
-                />
-              </div>
-
-              {error && (
-                <div className="bg-red-50 border border-red-200 text-red-700 px-3 py-2 rounded text-sm">
-                  {error}
-                </div>
-              )}
-              
-              <div className="flex gap-3">
-                <button
-                  onClick={handleAddCashback}
-                  disabled={cashbackLoading}
-                  className="flex-1 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors disabled:opacity-50 font-semibold"
-                >
-                  {cashbackLoading ? 'Processing...' : 'Add Purchase & Calculate Cashback'}
-                </button>
-                <button
-                  onClick={() => {
-                    setShowCashbackModal(false);
-                    setCashbackAmount('');
-                    setCashbackDescription('');
-                    setError('');
-                  }}
-                  className="px-6 py-2 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 transition-colors font-semibold"
-                >
-                  Cancel
-                </button>
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* Update Used Cashback Modal */}
-      {showUseCashbackModal && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <div className="bg-white rounded-lg p-6 w-full max-w-md">
-            <h3 className="text-xl font-bold text-gray-800 mb-4">Update Used Cashback Credit</h3>
-            
-            <div className="bg-green-50 border border-green-200 rounded-lg p-3 mb-4">
-              <p className="text-sm text-green-800">
-                Available Balance: <span className="font-bold text-lg">${customerData?.cashback?.balance || 0}</span>
-              </p>
-              <p className="text-xs text-green-700 mt-1">
-                Maximum update allowed (50%): <span className="font-bold">${((customerData?.cashback?.balance || 0) * 0.50).toFixed(2)}</span>
-              </p>
-            </div>
-            
-            <div className="space-y-4">
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Amount Used by Customer ($)
-                </label>
-                <input
-                  type="number"
-                  step="0.01"
-                  max={((customerData?.cashback?.balance || 0) * 0.50).toFixed(2)}
-                  value={useCashbackAmount}
-                  onChange={(e) => setUseCashbackAmount(e.target.value)}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500"
-                  placeholder="Enter amount customer used"
-                />
-                <p className="text-xs text-gray-500 mt-1">
-                  ⚠️ Maximum 50% of balance can be updated per transaction
-                </p>
-              </div>
-              
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Description (Optional)
-                </label>
-                <input
-                  type="text"
-                  value={useCashbackDescription}
-                  onChange={(e) => setUseCashbackDescription(e.target.value)}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500"
-                  placeholder="e.g., Applied to mattress purchase"
-                />
-              </div>
-
-              {error && (
-                <div className="bg-red-50 border border-red-200 text-red-700 px-3 py-2 rounded text-sm">
-                  {error}
-                </div>
-              )}
-              
-              <div className="flex gap-3">
-                <button
-                  onClick={handleUseCashback}
-                  disabled={cashbackLoading}
-                  className="flex-1 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors disabled:opacity-50 font-semibold"
-                >
-                  {cashbackLoading ? 'Processing...' : 'Confirm Update'}
-                </button>
-                <button
-                  onClick={() => {
-                    setShowUseCashbackModal(false);
-                    setUseCashbackAmount('');
-                    setUseCashbackDescription('');
-                    setError('');
-                  }}
-                  className="px-6 py-2 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 transition-colors font-semibold"
-                >
-                  Cancel
-                </button>
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
     </div>
   );
 }

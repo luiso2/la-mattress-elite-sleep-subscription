@@ -123,6 +123,32 @@ export async function POST(request: NextRequest) {
           });
         }
 
+        // Get cashback data from Stripe metadata
+        let cashbackBalance = 0;
+        let cashbackHistory: any[] = [];
+
+        try {
+          cashbackBalance = parseFloat(customerMetadata.cashback_balance || '0');
+
+          if (customerMetadata.cashback_history) {
+            const compactHistory = JSON.parse(customerMetadata.cashback_history);
+
+            // Convert compact format back to full format for display
+            cashbackHistory = compactHistory.map((tx: any, index: number) => ({
+              id: `cb_${index}`,
+              date: tx.d + 'T00:00:00.000Z',
+              amount: tx.a,
+              cashback: tx.c,
+              description: tx.desc,
+              employee: tx.e,
+              employeeEmail: '',
+              type: tx.t === 'e' ? 'earned' : 'used'
+            }));
+          }
+        } catch (cashbackError) {
+          console.warn('Could not parse cashback data:', cashbackError);
+        }
+
         // Build Stripe customer data object
         stripeCustomerData = {
           customer: {
@@ -141,6 +167,10 @@ export async function POST(request: NextRequest) {
             used: protectorUsedCount,
             available: 3 - protectorUsedCount,
             protectors: protectorDetails,
+          },
+          cashback: {
+            balance: cashbackBalance,
+            history: cashbackHistory
           },
           lastTransaction,
         };
@@ -227,6 +257,7 @@ export async function POST(request: NextRequest) {
       responseData.customer = stripeCustomerData.customer;
       responseData.credits = stripeCustomerData.credits;
       responseData.protectorReplacements = stripeCustomerData.protectorReplacements;
+      responseData.cashback = stripeCustomerData.cashback;
       responseData.lastTransaction = stripeCustomerData.lastTransaction;
     } else {
       // Indicate that Stripe data is not available

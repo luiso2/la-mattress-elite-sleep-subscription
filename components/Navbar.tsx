@@ -3,6 +3,32 @@
 import { useState } from 'react';
 import Link from 'next/link';
 
+// Logo component that handles fallback properly
+function LogoComponent() {
+  const [imageError, setImageError] = useState(false);
+
+  if (imageError) {
+    return (
+      <Link href="/" className="flex items-center">
+        <div className="text-2xl font-bold text-[#1e40af]">
+          LA MATTRESS
+        </div>
+      </Link>
+    );
+  }
+
+  return (
+    <Link href="/" className="flex items-center">
+      <img 
+        src="/logo.png" 
+        alt="LA MATTRESS" 
+        className="h-12 w-auto"
+        onError={() => setImageError(true)}
+      />
+    </Link>
+  );
+}
+
 export default function Navbar() {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
 
@@ -12,21 +38,7 @@ export default function Navbar() {
       <div className="container-mobile !py-0">
         <div className="flex justify-between items-center h-20">
           {/* Logo */}
-          <Link href="/" className="flex items-center">
-            <img 
-              src="/logo.png" 
-              alt="LA MATTRESS" 
-              className="h-12 w-auto"
-              onError={(e) => {
-                // Si no hay logo, mostrar texto
-                e.currentTarget.style.display = 'none';
-                const textLogo = document.createElement('div');
-                textLogo.className = 'text-2xl font-bold text-[#1e40af]';
-                textLogo.textContent = 'LA MATTRESS';
-                e.currentTarget.parentElement?.appendChild(textLogo);
-              }}
-            />
-          </Link>
+          <LogoComponent />
           
           {/* Desktop Navigation */}
           <div className="hidden md:flex items-center space-x-6 lg:space-x-8">
