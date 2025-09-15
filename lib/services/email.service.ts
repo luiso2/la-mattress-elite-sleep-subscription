@@ -307,6 +307,118 @@ class EmailService {
       html,
     });
   }
+
+  async sendTradeInCouponEmail(
+    email: string, 
+    data: {
+      customerName: string;
+      couponCode: string;
+      discountValue: number;
+      discountType: 'percentage' | 'fixed_amount';
+      expiryDate?: Date;
+      minimumPurchase?: number;
+    }
+  ): Promise<boolean> {
+    const formattedDiscountValue = data.discountType === 'percentage' 
+      ? `${data.discountValue}%` 
+      : `${data.discountValue}`;
+
+    const expiryDateFormatted = data.expiryDate 
+      ? data.expiryDate.toLocaleDateString('en-US', { 
+          year: 'numeric', 
+          month: 'long', 
+          day: 'numeric' 
+        })
+      : 'No expiration';
+
+    const minimumPurchaseText = data.minimumPurchase && data.minimumPurchase > 0
+      ? `Minimum purchase: ${data.minimumPurchase}`
+      : 'No minimum purchase required';
+
+    const html = `
+      <!DOCTYPE html>
+      <html>
+        <head>
+          <style>
+            body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; margin: 0; padding: 0; }
+            .container { max-width: 600px; margin: 0 auto; padding: 20px; }
+            .header { background: linear-gradient(135deg, #1e40af 0%, #00bcd4 100%); color: white; padding: 40px 30px; text-align: center; border-radius: 10px 10px 0 0; }
+            .logo { font-size: 32px; font-weight: bold; margin-bottom: 10px; }
+            .content { background: #ffffff; padding: 40px 30px; border: 1px solid #e0e0e0; border-radius: 0 0 10px 10px; }
+            .coupon-box { background: #fff3e0; border: 2px solid #ffd700; padding: 25px; border-radius: 8px; margin: 25px 0; text-align: center; }
+            .coupon-code { background: white; padding: 20px; border-radius: 5px; margin: 15px 0; }
+            .code-display { font-size: 32px; font-weight: bold; color: #1e40af; letter-spacing: 2px; margin: 15px 0; }
+            .cta-button { display: inline-block; padding: 15px 35px; background: #ffd700; color: #1e40af; text-decoration: none; border-radius: 5px; margin: 25px 0; font-weight: bold; font-size: 16px; }
+            .info-box { background: #f8f9fa; padding: 20px; border-radius: 8px; margin: 20px 0; border-left: 4px solid #00bcd4; }
+            .footer { text-align: center; margin-top: 40px; padding-top: 20px; border-top: 1px solid #e0e0e0; color: #666; font-size: 12px; }
+            .highlight { color: #1e40af; font-weight: bold; }
+          </style>
+        </head>
+        <body>
+          <div class="container">
+            <div class="header">
+              <div class="logo">LA MATTRESS</div>
+              <h1 style="margin: 10px 0; font-size: 28px;">Your Trade-In Credit is Ready!</h1>
+              <p style="margin: 0; font-size: 16px; opacity: 0.95;">Thank you for choosing LA Mattress</p>
+            </div>
+            <div class="content">
+              <h2 style="color: #1e40af;">Hello ${data.customerName}!</h2>
+              
+              <p style="font-size: 16px;">Great news! Your <strong>Trade-In Credit</strong> has been successfully processed and is ready to use on your next purchase.</p>
+              
+              <div class="coupon-box">
+                <h2 style="color: #1e40af; margin-top: 0;">🎁 Your Trade-In Credit Coupon</h2>
+                <div class="coupon-code">
+                  <p style="margin: 5px 0; font-size: 14px; color: #666;">Your exclusive coupon code:</p>
+                  <div class="code-display">
+                    ${data.couponCode}
+                  </div>
+                  <p style="margin: 5px 0; font-size: 16px; color: #1e40af; font-weight: bold;">Value: ${formattedDiscountValue}</p>
+                  <p style="margin: 5px 0; font-size: 14px; color: #666;">${minimumPurchaseText}</p>
+                  <p style="margin: 5px 0; font-size: 14px; color: #666;">Valid until: ${expiryDateFormatted}</p>
+                </div>
+                <p style="font-size: 14px; color: #666; margin: 10px 0;">Use this code online at checkout or show it to our staff in-store!</p>
+              </div>
+
+              <div class="info-box">
+                <h3 style="color: #1e40af; margin-top: 0;">How to Use Your Credit:</h3>
+                <p style="margin: 10px 0;"><strong>Online:</strong> Enter the code ${data.couponCode} at checkout</p>
+                <p style="margin: 10px 0;"><strong>In-Store:</strong> Show this email or provide the code to our sales associate</p>
+                <p style="margin: 10px 0; font-size: 14px; color: #666;">This credit can be applied to any mattress, furniture, or accessory purchase.</p>
+              </div>
+              
+              <div style="text-align: center;">
+                <a href="https://mattressstoreslosangeles.com" class="cta-button">SHOP NOW</a>
+              </div>
+              
+              <div style="background: #e3f2fd; padding: 15px; border-radius: 8px; margin-top: 25px;">
+                <p style="margin: 0; font-size: 14px;"><strong>Thank You for Your Trade-In!</strong><br>
+                We appreciate your business and look forward to helping you find your perfect new mattress.</p>
+              </div>
+              
+              <p style="margin-top: 25px; font-size: 14px; color: #666;">
+                <strong>Need Help?</strong><br>
+                Visit us at any LA Mattress location or call <strong>1-800-233-7534</strong><br>
+                Our sleep experts are ready to assist you!
+              </p>
+            </div>
+            <div class="footer">
+              <p style="margin: 5px 0;"><strong>LA MATTRESS</strong></p>
+              <p style="margin: 5px 0;">Your Trusted Sleep Partner Since 1989</p>
+              <p style="margin: 10px 0; font-size: 11px;">This email confirms your Trade-In Credit. Please keep it for your records.</p>
+              <p style="margin: 10px 0; font-size: 11px;">© 2024 LA Mattress. All rights reserved.</p>
+            </div>
+          </div>
+        </body>
+      </html>
+    `;
+
+    return this.sendEmail({
+      to: email,
+      subject: `🎁 ${data.customerName}, Your ${formattedDiscountValue} Trade-In Credit is Ready!`,
+      html,
+    });
+  }
 }
 
 export default new EmailService();

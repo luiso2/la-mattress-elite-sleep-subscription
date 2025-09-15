@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { shopifyService } from '@/lib/services/shopify.service';
 import { couponService } from '@/lib/services/coupon.service';
+import emailService from '@/lib/services/email.service';
 
 // Webhook público para crear cupones en Shopify
 // Este endpoint NO requiere autenticación JWT
@@ -72,6 +73,47 @@ export async function POST(request: NextRequest) {
       customer_email 
     });
 
+    // Verificar si el cupón ya existe en Shopify
+    const existingCoupon = await shopifyService.validateCouponCode(code.toUpperCase());
+    
+    if (existingCoupon.valid) {
+      console.log('⚠️ Coupon already exists in Shopify:', code);
+      
+      // Si el cupón ya existe, aún podemos enviar el email si hay uno
+      if (customer_email) {
+        console.log('📧 Sending email for existing coupon...');
+        
+        const emailSent = await emailService.sendTradeInCouponEmail(
+          customer_email,
+          {
+            customerName: customer_name || 'Valued Customer',
+            couponCode: code.toUpperCase(),
+            discountValue: Number(discount_value),
+            discountType: discount_type as 'percentage' | 'fixed_amount',
+            expiryDate: valid_until ? new Date(valid_until) : new Date(Date.now() + 90 * 24 * 60 * 60 * 1000),
+            minimumPurchase: minimum_purchase ? Number(minimum_purchase) : undefined
+          }
+        );
+        
+        if (emailSent) {
+          console.log('✅ Email sent for existing coupon');
+        }
+      }
+      
+      const responseData = {
+        success: true,
+        message: 'Cupón ya existe en Shopify, email enviado si correspondía',
+        data: {
+          existing_coupon: true,
+          code: code.toUpperCase(),
+          email_sent: customer_email ? true : false
+        }
+      };
+      
+      const successResponse = NextResponse.json(responseData);
+      return addCorsHeaders(successResponse);
+    }
+
     // Paso 1: Crear el cupón en Shopify usando el servicio existente
     const shopifyResult = await shopifyService.createCoupon({
       code: code.toUpperCase(),
@@ -139,35 +181,26 @@ export async function POST(request: NextRequest) {
     // Paso 3: Si hay email del cliente, enviar notificación
     if (customer_email) {
       try {
-        console.log('📧 Sending customer notification...');
+        console.log('📧 Sending customer notification to:', customer_email);
         
-        // Calcular fecha de expiración legible
-        const expiryDate = valid_until 
-          ? new Date(valid_until).toLocaleDateString('es-ES', { 
-              year: 'numeric', 
-              month: 'long', 
-              day: 'numeric' 
-            })
-          : new Date(Date.now() + 90 * 24 * 60 * 60 * 1000).toLocaleDateString('es-ES', {
-              year: 'numeric',
-              month: 'long',
-              day: 'numeric'
-            });
+        // Enviar email usando el servicio de email
+        const emailSent = await emailService.sendTradeInCouponEmail(
+          customer_email,
+          {
+            customerName: customer_name || 'Valued Customer',
+            couponCode: shopifyResult.discountCode.code,
+            discountValue: Number(discount_value),
+            discountType: discount_type as 'percentage' | 'fixed_amount',
+            expiryDate: valid_until ? new Date(valid_until) : new Date(Date.now() + 90 * 24 * 60 * 60 * 1000),
+            minimumPurchase: minimum_purchase ? Number(minimum_purchase) : undefined
+          }
+        );
         
-        // Formatear el valor del descuento
-        const formattedDiscountValue = discount_type === 'percentage' 
-          ? `${discount_value}%` 
-          : `$${discount_value}`;
-        
-        // Aquí puedes agregar lógica para enviar email al cliente
-        // usando el servicio de email que prefieras (emailService, omnisendService, etc.)
-        
-        // Por ahora, solo log
-        console.log('📬 Email notification would be sent to:', customer_email, {
-          code: shopifyResult.discountCode.code,
-          discountValue: formattedDiscountValue,
-          expiryDate: expiryDate
-        });
+        if (emailSent) {
+          console.log('✅ Email notification sent successfully to:', customer_email);
+        } else {
+          console.log('⚠️ Email notification could not be sent to:', customer_email);
+        }
         
       } catch (emailError: any) {
         console.error('⚠️ Email notification failed:', emailError.message);
