@@ -6,6 +6,32 @@ import { couponService } from '@/lib/services/coupon.service';
 // Este endpoint NO requiere autenticación JWT
 // Diseñado para recibir solicitudes externas (como de Google Apps Script o sistemas externos)
 
+// Helper function to add CORS headers
+function addCorsHeaders(response: NextResponse) {
+  const allowedOrigins = [
+    'https://mattressstoreslosangeles.com',
+    'https://www.mattressstoreslosangeles.com',
+    'http://localhost:3000',
+    'http://localhost:3001',
+    'https://lamattressubscription.merktop.com'
+  ];
+  
+  // Since this is a webhook, we'll allow the specific origins
+  response.headers.set('Access-Control-Allow-Origin', 'https://mattressstoreslosangeles.com');
+  response.headers.set('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
+  response.headers.set('Access-Control-Allow-Headers', 'Content-Type, Authorization, X-Requested-With, Accept, Origin, Cache-Control, Pragma, Expires');
+  response.headers.set('Access-Control-Max-Age', '86400');
+  response.headers.set('Access-Control-Allow-Credentials', 'true');
+  
+  return response;
+}
+
+// Handle OPTIONS request for CORS preflight
+export async function OPTIONS(request: NextRequest) {
+  const response = new NextResponse(null, { status: 200 });
+  return addCorsHeaders(response);
+}
+
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
@@ -28,13 +54,14 @@ export async function POST(request: NextRequest) {
 
     // Validación básica
     if (!code || !discount_value) {
-      return NextResponse.json(
+      const errorResponse = NextResponse.json(
         {
           success: false,
           error: 'Código y valor de descuento son requeridos'
         },
         { status: 400 }
       );
+      return addCorsHeaders(errorResponse);
     }
 
     console.log('🎫 Creating new coupon via webhook:', { 
@@ -59,13 +86,14 @@ export async function POST(request: NextRequest) {
 
     if (!shopifyResult.priceRule || !shopifyResult.discountCode) {
       console.error('❌ Failed to create coupon in Shopify');
-      return NextResponse.json(
+      const errorResponse = NextResponse.json(
         {
           success: false,
           error: 'Failed to create coupon in Shopify'
         },
         { status: 500 }
       );
+      return addCorsHeaders(errorResponse);
     }
 
     console.log('✅ Coupon created in Shopify:', {
@@ -147,7 +175,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Respuesta exitosa con toda la información
-    const response = {
+    const responseData = {
       success: true,
       message: 'Cupón creado exitosamente en Shopify',
       data: {
@@ -181,14 +209,17 @@ export async function POST(request: NextRequest) {
     };
 
     console.log('✅ Webhook processed successfully');
-    return NextResponse.json(response);
+    const successResponse = NextResponse.json(responseData);
+    return addCorsHeaders(successResponse);
 
   } catch (error: any) {
     console.error('❌ Webhook error:', error);
     
+    let errorResponse;
+    
     // Manejo detallado de errores
     if (error.response?.status === 422) {
-      return NextResponse.json(
+      errorResponse = NextResponse.json(
         {
           success: false,
           error: 'Datos de cupón inválidos',
@@ -197,10 +228,8 @@ export async function POST(request: NextRequest) {
         },
         { status: 422 }
       );
-    }
-    
-    if (error.response?.status === 401) {
-      return NextResponse.json(
+    } else if (error.response?.status === 401) {
+      errorResponse = NextResponse.json(
         {
           success: false,
           error: 'Token de Shopify inválido o sin permisos',
@@ -208,26 +237,30 @@ export async function POST(request: NextRequest) {
         },
         { status: 401 }
       );
+    } else {
+      errorResponse = NextResponse.json(
+        {
+          success: false,
+          error: 'Error al crear cupón en Shopify',
+          details: error.message || 'Error desconocido'
+        },
+        { status: 500 }
+      );
     }
     
-    return NextResponse.json(
-      {
-        success: false,
-        error: 'Error al crear cupón en Shopify',
-        details: error.message || 'Error desconocido'
-      },
-      { status: 500 }
-    );
+    return addCorsHeaders(errorResponse);
   }
 }
 
 // GET endpoint para verificar que el webhook está funcionando
 export async function GET(request: NextRequest) {
-  return NextResponse.json({
+  const responseData = {
     success: true,
     message: 'Shopify Coupon Webhook Endpoint',
     status: 'Ready to receive POST requests',
     endpoint: '/api/webhook/shopify-coupon',
+    cors_enabled: true,
+    allowed_origin: 'https://mattressstoreslosangeles.com',
     required_fields: {
       code: 'string (required) - Coupon code',
       discount_value: 'number (required) - Discount value',
@@ -251,5 +284,8 @@ export async function GET(request: NextRequest) {
       customer_name: 'John Doe',
       customer_email: 'john@example.com'
     }
-  });
+  };
+  
+  const response = NextResponse.json(responseData);
+  return addCorsHeaders(response);
 }
