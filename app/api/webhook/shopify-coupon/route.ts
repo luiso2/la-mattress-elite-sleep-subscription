@@ -19,7 +19,8 @@ function addCorsHeaders(response: NextResponse) {
   // Since this is a webhook, we'll allow the specific origins
   response.headers.set('Access-Control-Allow-Origin', 'https://mattressstoreslosangeles.com');
   response.headers.set('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
-  response.headers.set('Access-Control-Allow-Headers', 'Content-Type, Authorization, X-Requested-With, Accept, Origin, Cache-Control, Pragma, Expires');
+  // Incluimos TODOS los headers que el navegador pueda enviar
+  response.headers.set('Access-Control-Allow-Headers', '*');
   response.headers.set('Access-Control-Max-Age', '86400');
   response.headers.set('Access-Control-Allow-Credentials', 'true');
   
@@ -261,6 +262,7 @@ export async function GET(request: NextRequest) {
     endpoint: '/api/webhook/shopify-coupon',
     cors_enabled: true,
     allowed_origin: 'https://mattressstoreslosangeles.com',
+    allowed_headers: 'All headers are allowed (*)',
     required_fields: {
       code: 'string (required) - Coupon code',
       discount_value: 'number (required) - Discount value',

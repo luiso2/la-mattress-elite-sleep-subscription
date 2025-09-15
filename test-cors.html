@@ -1,0 +1,195 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test CORS - Shopify Coupon Webhook</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 50px auto;
+            padding: 20px;
+        }
+        .test-section {
+            margin: 20px 0;
+            padding: 20px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+        }
+        .success {
+            color: green;
+            font-weight: bold;
+        }
+        .error {
+            color: red;
+            font-weight: bold;
+        }
+        button {
+            padding: 10px 20px;
+            margin: 10px 0;
+            cursor: pointer;
+            background-color: #007bff;
+            color: white;
+            border: none;
+            border-radius: 5px;
+        }
+        button:hover {
+            background-color: #0056b3;
+        }
+        pre {
+            background-color: #f4f4f4;
+            padding: 10px;
+            border-radius: 5px;
+            overflow-x: auto;
+        }
+    </style>
+</head>
+<body>
+    <h1>Test CORS - Shopify Coupon Webhook</h1>
+    
+    <div class="test-section">
+        <h2>Información del Test</h2>
+        <p><strong>Origen simulado:</strong> https://mattressstoreslosangeles.com</p>
+        <p><strong>Endpoint:</strong> https://lamattressubscription.merktop.com/api/webhook/shopify-coupon</p>
+        <p><strong>Headers incluidos:</strong> Cache-Control</p>
+    </div>
+
+    <div class="test-section">
+        <h2>Test 1: Verificar endpoint (GET)</h2>
+        <button onclick="testGET()">Ejecutar Test GET</button>
+        <div id="result-get"></div>
+    </div>
+
+    <div class="test-section">
+        <h2>Test 2: Crear cupón de prueba (POST)</h2>
+        <button onclick="testPOST()">Ejecutar Test POST</button>
+        <div id="result-post"></div>
+    </div>
+
+    <div class="test-section">
+        <h2>Test 3: Preflight (OPTIONS)</h2>
+        <button onclick="testOPTIONS()">Ejecutar Test OPTIONS</button>
+        <div id="result-options"></div>
+    </div>
+
+    <script>
+        // Test GET request
+        async function testGET() {
+            const resultDiv = document.getElementById('result-get');
+            resultDiv.innerHTML = '<p>Ejecutando test...</p>';
+            
+            try {
+                const response = await fetch('https://lamattressubscription.merktop.com/api/webhook/shopify-coupon', {
+                    method: 'GET',
+                    headers: {
+                        'Cache-Control': 'no-cache'
+                    }
+                });
+                
+                const data = await response.json();
+                
+                if (response.ok) {
+                    resultDiv.innerHTML = `
+                        <p class="success">✅ Test exitoso!</p>
+                        <p>Status: ${response.status}</p>
+                        <p>CORS Headers:</p>
+                        <ul>
+                            <li>Access-Control-Allow-Origin: ${response.headers.get('Access-Control-Allow-Origin')}</li>
+                            <li>Access-Control-Allow-Methods: ${response.headers.get('Access-Control-Allow-Methods')}</li>
+                            <li>Access-Control-Allow-Headers: ${response.headers.get('Access-Control-Allow-Headers')}</li>
+                        </ul>
+                        <p>Response:</p>
+                        <pre>${JSON.stringify(data, null, 2)}</pre>
+                    `;
+                } else {
+                    resultDiv.innerHTML = `<p class="error">❌ Error: ${response.status}</p>`;
+                }
+            } catch (error) {
+                resultDiv.innerHTML = `<p class="error">❌ Error CORS: ${error.message}</p>`;
+            }
+        }
+
+        // Test POST request
+        async function testPOST() {
+            const resultDiv = document.getElementById('result-post');
+            resultDiv.innerHTML = '<p>Ejecutando test...</p>';
+            
+            const testData = {
+                code: 'TESTCORS' + Date.now(),
+                discount_type: 'percentage',
+                discount_value: 10,
+                description: 'Test CORS desde mattressstoreslosangeles.com',
+                valid_until: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString(),
+                customer_name: 'Test User',
+                customer_email: 'test@example.com'
+            };
+            
+            try {
+                const response = await fetch('https://lamattressubscription.merktop.com/api/webhook/shopify-coupon', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Cache-Control': 'no-cache'
+                    },
+                    body: JSON.stringify(testData)
+                });
+                
+                const data = await response.json();
+                
+                if (response.ok) {
+                    resultDiv.innerHTML = `
+                        <p class="success">✅ Cupón creado exitosamente!</p>
+                        <p>Status: ${response.status}</p>
+                        <p>Código del cupón: ${data.data?.summary?.code}</p>
+                        <p>Response completa:</p>
+                        <pre>${JSON.stringify(data, null, 2)}</pre>
+                    `;
+                } else {
+                    resultDiv.innerHTML = `
+                        <p class="error">❌ Error al crear cupón</p>
+                        <p>Status: ${response.status}</p>
+                        <pre>${JSON.stringify(data, null, 2)}</pre>
+                    `;
+                }
+            } catch (error) {
+                resultDiv.innerHTML = `<p class="error">❌ Error CORS: ${error.message}</p>`;
+            }
+        }
+
+        // Test OPTIONS request
+        async function testOPTIONS() {
+            const resultDiv = document.getElementById('result-options');
+            resultDiv.innerHTML = '<p>Ejecutando test preflight...</p>';
+            
+            try {
+                const response = await fetch('https://lamattressubscription.merktop.com/api/webhook/shopify-coupon', {
+                    method: 'OPTIONS',
+                    headers: {
+                        'Access-Control-Request-Method': 'POST',
+                        'Access-Control-Request-Headers': 'Content-Type, Cache-Control'
+                    }
+                });
+                
+                if (response.ok) {
+                    resultDiv.innerHTML = `
+                        <p class="success">✅ Preflight exitoso!</p>
+                        <p>Status: ${response.status}</p>
+                        <p>CORS Headers:</p>
+                        <ul>
+                            <li>Access-Control-Allow-Origin: ${response.headers.get('Access-Control-Allow-Origin')}</li>
+                            <li>Access-Control-Allow-Methods: ${response.headers.get('Access-Control-Allow-Methods')}</li>
+                            <li>Access-Control-Allow-Headers: ${response.headers.get('Access-Control-Allow-Headers')}</li>
+                            <li>Access-Control-Max-Age: ${response.headers.get('Access-Control-Max-Age')}</li>
+                        </ul>
+                    `;
+                } else {
+                    resultDiv.innerHTML = `<p class="error">❌ Error en preflight: ${response.status}</p>`;
+                }
+            } catch (error) {
+                resultDiv.innerHTML = `<p class="error">❌ Error: ${error.message}</p>`;
+            }
+        }
+    </script>
+</body>
+</html>

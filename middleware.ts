@@ -27,7 +27,8 @@ export function middleware(request: NextRequest) {
     }
     
     response.headers.set('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS, PATCH');
-    response.headers.set('Access-Control-Allow-Headers', 'Content-Type, Authorization, X-Requested-With, Accept, Origin, Cache-Control, Pragma, Expires');
+    // Agregamos TODOS los headers posibles que los navegadores puedan enviar
+    response.headers.set('Access-Control-Allow-Headers', 'Content-Type, Authorization, X-Requested-With, Accept, Origin, Cache-Control, Pragma, Expires, Priority, Sec-Fetch-Dest, Sec-Fetch-Mode, Sec-Fetch-Site, User-Agent, Referer, Accept-Language, Accept-Encoding');
     response.headers.set('Access-Control-Max-Age', '86400'); // 24 hours
     response.headers.set('Access-Control-Allow-Credentials', 'true');
     
