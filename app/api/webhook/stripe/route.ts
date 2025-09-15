@@ -234,27 +234,46 @@ async function handleInvoicePaymentSucceeded(event: Stripe.Event) {
       // Only send welcome email for first payment
       if (isFirstPayment) {
         const welcomeEmailAlreadySent = customer.metadata?.welcome_email_sent === 'true';
-        
+
         if (!welcomeEmailAlreadySent && !welcomeEmailSent.has(customer.email)) {
-          console.log(`First payment received - sending welcome email via Omnisend to ${customer.email}`);
-          // Use Omnisend for welcome email
-          await omnisendService.sendWelcomeEmail(customer.email, customer.name || undefined, customer.id);
-          welcomeEmailSent.add(customer.email);
-          
-          // Update customer metadata
-          try {
-            const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
-              apiVersion: '2024-10-28.acacia',
+          console.log(`First payment received - sending welcome email to ${customer.email}`);
+
+          // Use nodemailer email service for welcome email
+          const emailSent = await emailService.sendLaMattressWelcomeEmail(
+            customer.email,
+            customer.name || undefined
+          );
+
+          if (emailSent) {
+            console.log(`Welcome email sent successfully to ${customer.email}`);
+            welcomeEmailSent.add(customer.email);
+
+            // Send coupon creation request to Google Apps Script
+            console.log(`Sending coupon creation request for ${customer.email}`);
+            await sendToGoogleAppsScript({
+              name: customer.name || 'Cliente',
+              email: customer.email,
+              message: 'First payment received - create $15 coupon'
             });
-            await stripe.customers.update(customer.id, {
-              metadata: {
-                ...customer.metadata,
-                welcome_email_sent: 'true',
-                welcome_email_date: new Date().toISOString(),
-              }
-            });
-          } catch (error) {
-            console.error('Error updating customer metadata:', error);
+
+            // Update customer metadata
+            try {
+              const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
+                apiVersion: '2024-10-28.acacia',
+              });
+              await stripe.customers.update(customer.id, {
+                metadata: {
+                  ...customer.metadata,
+                  welcome_email_sent: 'true',
+                  welcome_email_date: new Date().toISOString(),
+                  coupon_requested: 'true',
+                }
+              });
+            } catch (error) {
+              console.error('Error updating customer metadata:', error);
+            }
+          } else {
+            console.error(`Failed to send welcome email to ${customer.email}`);
           }
         }
       } else {

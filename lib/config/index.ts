@@ -23,7 +23,7 @@ export const config = {
     secure: process.env.EMAIL_SECURE === 'true',
     auth: {
       user: process.env.EMAIL_USER || '',
-      pass: process.env.EMAIL_PASSWORD || '',
+      pass: process.env.EMAIL_PASS || process.env.EMAIL_PASSWORD || '',
     },
     from: process.env.EMAIL_FROM || 'Elite Sleep+ <noreply@elitesleep.com>',
   },

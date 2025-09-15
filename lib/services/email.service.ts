@@ -122,9 +122,12 @@ class EmailService {
     });
   }
 
-  async sendLaMattressWelcomeEmail(email: string, customerName?: string): Promise<boolean> {
+  async sendLaMattressWelcomeEmail(email: string, customerName?: string, couponCode?: string): Promise<boolean> {
     const portalUrl = 'https://lamattressubscription.merktop.com/portal';
-    
+
+    // Generate a default coupon code if not provided (for display purposes)
+    const displayCouponCode = couponCode || 'ELITE15-' + Date.now().toString().slice(-6);
+
     const html = `
       <!DOCTYPE html>
       <html>
@@ -156,6 +159,18 @@ class EmailService {
               
               <p style="font-size: 16px;">Congratulations! Your <strong>Elite Sleep+ membership</strong> has been successfully activated. You now have access to exclusive benefits worth over $500 annually!</p>
               
+              <div style="background: #fff3e0; border: 2px solid #ffd700; padding: 25px; border-radius: 8px; margin: 25px 0; text-align: center;">
+                <h2 style="color: #1e40af; margin-top: 0;">🎁 Your First Month $15 Discount Coupon</h2>
+                <div style="background: white; padding: 20px; border-radius: 5px; margin: 15px 0;">
+                  <p style="margin: 5px 0; font-size: 14px; color: #666;">Your exclusive coupon code:</p>
+                  <div style="font-size: 32px; font-weight: bold; color: #1e40af; letter-spacing: 2px; margin: 15px 0;">
+                    ${displayCouponCode}
+                  </div>
+                  <p style="margin: 5px 0; font-size: 14px; color: #666;">Valid for 30 days • Minimum purchase: $50</p>
+                </div>
+                <p style="font-size: 14px; color: #666; margin: 10px 0;">Use this code online or show it in-store for instant savings!</p>
+              </div>
+
               <div class="benefits-box">
                 <h3 style="color: #1e40af; margin-top: 0;">Your Elite Sleep+ Benefits:</h3>
                 <div class="benefit-item"><strong>$180 Annual Store Credit</strong> - $15 automatically added to your account every month</div>

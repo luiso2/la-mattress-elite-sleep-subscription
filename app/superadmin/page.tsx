@@ -21,12 +21,19 @@ export default function SuperAdminLogin() {
     try {
       const response = await fetch('/api/superadmin/setup');
       const data = await response.json();
+      console.log('Setup check response:', data);
       setNeedsSetup(data.needsSetup);
       if (data.needsSetup) {
         setSetupMode(true);
+      } else {
+        // Force login mode when super admins exist
+        setSetupMode(false);
       }
     } catch (error) {
       console.error('Error checking setup:', error);
+      // On error, default to login mode
+      setNeedsSetup(false);
+      setSetupMode(false);
     }
   };
 
@@ -176,16 +183,7 @@ export default function SuperAdminLogin() {
           </button>
         </form>
 
-        {!setupMode && needsSetup && (
-          <div className="mt-6 text-center">
-            <button
-              onClick={() => setSetupMode(true)}
-              className="text-[#00bcd4] hover:text-[#00acc1] text-sm"
-            >
-              Need to set up super admin? Click here
-            </button>
-          </div>
-        )}
+        {/* Setup button removed - super admins already exist */}
 
         <div className="mt-8 pt-6 border-t border-gray-200">
           <div className="flex items-center justify-center space-x-4">
