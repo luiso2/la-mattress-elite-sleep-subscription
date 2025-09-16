@@ -46,11 +46,11 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const { customerId, amount } = await request.json();
+    const { customerEmail, creditAmount } = await request.json();
 
-    if (!customerId || !amount) {
+    if (!customerEmail || !creditAmount) {
       return NextResponse.json(
-        { error: 'Customer ID and amount are required' },
+        { error: 'Customer email and credit amount are required' },
         { status: 400 }
       );
     }
@@ -63,15 +63,37 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Get current customer metadata
-    const customer = await stripeClient.customers.retrieve(customerId);
+    // Find customer by email
+    const customers = await stripeClient.customers.list({
+      email: customerEmail,
+      limit: 1
+    });
+
+    if (customers.data.length === 0) {
+      return NextResponse.json(
+        { error: 'Customer not found' },
+        { status: 404 }
+      );
+    }
+
+    const customer = customers.data[0];
+    const customerId = customer.id;
     const currentMetadata = (customer as any).metadata || {};
+    
+    // Validate amount
+    const creditAmountNum = parseFloat(creditAmount);
+    if (isNaN(creditAmountNum) || creditAmountNum <= 0) {
+      return NextResponse.json(
+        { error: 'Invalid credit amount' },
+        { status: 400 }
+      );
+    }
     
     const currentUsed = parseInt(currentMetadata.credits_used || '0');
     const currentReserved = parseInt(currentMetadata.credits_reserved || '0');
 
-    // Validate that amount matches reserved credits
-    if (amount !== currentReserved) {
+    // Validate that creditAmount matches reserved credits
+    if (creditAmountNum !== currentReserved) {
       return NextResponse.json(
         { error: 'Amount does not match reserved credits' },
         { status: 400 }
@@ -80,7 +102,7 @@ export async function POST(request: NextRequest) {
 
     // Create transaction record
     const transaction = {
-      amount: amount,
+      amount: creditAmountNum,
       date: new Date().toISOString(),
       employee: employeeData.name,
       employeeId: employeeData.employeeId,
@@ -91,7 +113,7 @@ export async function POST(request: NextRequest) {
     await stripeClient.customers.update(customerId, {
       metadata: {
         ...currentMetadata,
-        credits_used: (currentUsed + amount).toString(),
+        credits_used: (currentUsed + creditAmountNum).toString(),
         credits_reserved: '0', // Clear reserved credits
         last_transaction: JSON.stringify(transaction),
         last_transaction_date: new Date().toISOString(),
@@ -102,14 +124,14 @@ export async function POST(request: NextRequest) {
     // Log the transaction (in production, you might want to store this in a database)
     console.log('Credit transaction confirmed:', {
       customerId,
-      amount,
+      amount: creditAmountNum,
       employee: employeeData.name,
       timestamp: new Date().toISOString(),
     });
 
     return NextResponse.json({
       success: true,
-      message: `Successfully confirmed $${amount} credit usage`,
+      message: `Successfully confirmed $${creditAmountNum} credit usage`,
       transaction,
     });
 

@@ -384,7 +384,7 @@ class EmailService {
                 <h3 style="color: #1e40af; margin-top: 0;">How to Use Your Credit:</h3>
                 <p style="margin: 10px 0;"><strong>Online:</strong> Enter the code ${data.couponCode} at checkout</p>
                 <p style="margin: 10px 0;"><strong>In-Store:</strong> Show this email or provide the code to our sales associate</p>
-                <p style="margin: 10px 0; font-size: 14px; color: #666;">This credit can be applied to any mattress, furniture, or accessory purchase.</p>
+                <p style="margin: 10px 0; font-size: 14px; color: #666;">This mattress credit trade-in only applies to equal or larger size mattresses.</p>
               </div>
               
               <div style="text-align: center;">
