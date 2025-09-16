@@ -114,68 +114,88 @@ export async function POST(request: NextRequest) {
       return addCorsHeaders(successResponse);
     }
 
-    // Paso 1: Crear el cupón en Shopify usando el servicio existente
-    const shopifyResult = await shopifyService.createCoupon({
-      code: code.toUpperCase(),
-      title: description || `Cupón ${code}`,
-      discountType: discount_type as 'percentage' | 'fixed_amount',
-      discountValue: Number(discount_value),
-      startsAt: valid_from ? new Date(valid_from) : new Date(),
-      endsAt: valid_until ? new Date(valid_until) : undefined,
-      usageLimit: max_uses ? Number(max_uses) : undefined,
-      oncePerCustomer: true,
-      minimumPurchase: minimum_purchase ? Number(minimum_purchase) : undefined
-    });
-
-    if (!shopifyResult.priceRule || !shopifyResult.discountCode) {
-      console.error('❌ Failed to create coupon in Shopify');
-      const errorResponse = NextResponse.json(
-        {
-          success: false,
-          error: 'Failed to create coupon in Shopify'
-        },
-        { status: 500 }
-      );
-      return addCorsHeaders(errorResponse);
-    }
-
-    console.log('✅ Coupon created in Shopify:', {
-      priceRuleId: shopifyResult.priceRule.id,
-      discountCodeId: shopifyResult.discountCode.id,
-      code: shopifyResult.discountCode.code
-    });
-
-    // Paso 2: Si hay información del cliente, guardar en la base de datos
-    let savedCoupon = null;
+    // Crear el cupón usando el servicio completo (incluye Shopify + BD)
+    let result = null;
+    let shopifyResult = null;
+    
     if (customer_email || customer_name) {
-      try {
-        console.log('💾 Saving coupon to database...');
-        
-        const result = await couponService.createCoupon({
-          customerEmail: customer_email || '',
-          customerName: customer_name || 'Guest',
-          customerPhone: customer_phone,
-          code: shopifyResult.discountCode.code,
-          discountType: discount_type as 'percentage' | 'fixed_amount',
-          discountValue: Number(discount_value),
-          description: description || `Cupón ${code}`,
-          validFrom: valid_from ? new Date(valid_from) : new Date(),
-          validUntil: valid_until ? new Date(valid_until) : new Date(Date.now() + 90 * 24 * 60 * 60 * 1000), // 90 días por defecto
-          maxUses: max_uses ? Number(max_uses) : undefined,
-          minimumPurchase: minimum_purchase ? Number(minimum_purchase) : undefined,
-          appliesTo: applies_to
-        });
+      // Si hay información del cliente, usar el servicio completo
+      console.log('💾 Creating coupon with customer info...');
+      
+      result = await couponService.createCoupon({
+        customerEmail: customer_email || '',
+        customerName: customer_name || 'Guest',
+        customerPhone: customer_phone,
+        code: code.toUpperCase(),
+        discountType: discount_type as 'percentage' | 'fixed_amount',
+        discountValue: Number(discount_value),
+        description: description || `Cupón ${code}`,
+        validFrom: valid_from ? new Date(valid_from) : new Date(),
+        validUntil: valid_until ? new Date(valid_until) : new Date(Date.now() + 90 * 24 * 60 * 60 * 1000), // 90 días por defecto
+        maxUses: max_uses ? Number(max_uses) : undefined,
+        minimumPurchase: minimum_purchase ? Number(minimum_purchase) : undefined,
+        appliesTo: applies_to
+      });
 
-        if (result.success) {
-          savedCoupon = result.coupon;
-          console.log('✅ Coupon saved to database');
-        } else {
-          console.error('⚠️ Failed to save to database:', result.error);
-        }
-      } catch (dbError: any) {
-        console.error('⚠️ Database save failed:', dbError.message);
-        // No fallar la creación del cupón si la BD falla
+      if (!result.success) {
+        console.error('❌ Failed to create coupon:', result.error);
+        const errorResponse = NextResponse.json(
+          {
+            success: false,
+            error: result.error || 'Failed to create coupon'
+          },
+          { status: 500 }
+        );
+        return addCorsHeaders(errorResponse);
       }
+
+      // Extraer información de Shopify del cupón creado
+      shopifyResult = {
+        priceRule: {
+          id: parseInt(result.coupon.shopifyPriceRuleId),
+          title: description || `Cupón ${code}`,
+          value_type: discount_type,
+          value: discount_value,
+          starts_at: valid_from || new Date().toISOString(),
+          ends_at: valid_until || new Date(Date.now() + 90 * 24 * 60 * 60 * 1000).toISOString()
+        },
+        discountCode: {
+          id: parseInt(result.coupon.shopifyDiscountCodeId),
+          code: result.coupon.code,
+          created_at: result.coupon.createdAt
+        }
+      };
+      
+      console.log('✅ Coupon created successfully with customer info');
+    } else {
+      // Si no hay información del cliente, crear solo en Shopify
+      console.log('🏪 Creating coupon only in Shopify (no customer info)...');
+      
+      shopifyResult = await shopifyService.createCoupon({
+        code: code.toUpperCase(),
+        title: description || `Cupón ${code}`,
+        discountType: discount_type as 'percentage' | 'fixed_amount',
+        discountValue: Number(discount_value),
+        startsAt: valid_from ? new Date(valid_from) : new Date(),
+        endsAt: valid_until ? new Date(valid_until) : undefined,
+        usageLimit: max_uses ? Number(max_uses) : undefined,
+        oncePerCustomer: true,
+        minimumPurchase: minimum_purchase ? Number(minimum_purchase) : undefined
+      });
+
+      if (!shopifyResult.priceRule || !shopifyResult.discountCode) {
+        console.error('❌ Failed to create coupon in Shopify');
+        const errorResponse = NextResponse.json(
+          {
+            success: false,
+            error: 'Failed to create coupon in Shopify'
+          },
+          { status: 500 }
+        );
+        return addCorsHeaders(errorResponse);
+      }
+      
+      console.log('✅ Coupon created in Shopify only');
     }
 
     // Paso 3: Si hay email del cliente, enviar notificación
@@ -226,8 +246,8 @@ export async function POST(request: NextRequest) {
           code: shopifyResult.discountCode.code,
           created_at: shopifyResult.discountCode.created_at
         },
-        database_record: savedCoupon ? {
-          id: savedCoupon.id,
+        database_record: result?.coupon ? {
+          id: result.coupon.id,
           saved: true
         } : null,
         summary: {
