@@ -404,7 +404,7 @@ class EmailService {
             </div>
             <div class="footer">
               <p style="margin: 5px 0;"><strong>LA MATTRESS</strong></p>
-              <p style="margin: 5px 0;">Your Trusted Sleep Partner Since 1989</p>
+              <p style="margin: 5px 0;">Your Trusted Sleep Partner Since 2005</p>
               <p style="margin: 10px 0; font-size: 11px;">This email confirms your Trade-In Credit. Please keep it for your records.</p>
               <p style="margin: 10px 0; font-size: 11px;">© 2024 LA Mattress. All rights reserved.</p>
             </div>
