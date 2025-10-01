@@ -93,6 +93,22 @@ interface EmployeeAttributes {
 
 interface EmployeeCreationAttributes extends Optional<EmployeeAttributes, 'id' | 'role' | 'isActive'> {}
 
+interface OrphanedRuleLogAttributes {
+  id: number;
+  priceRuleId: string;
+  couponCode: string;
+  errorMessage: string;
+  errorDetails?: any;
+  shopifyResponse?: any;
+  attemptCount: number;
+  resolved: boolean;
+  resolvedAt?: Date;
+  createdAt?: Date;
+  updatedAt?: Date;
+}
+
+interface OrphanedRuleLogCreationAttributes extends Optional<OrphanedRuleLogAttributes, 'id' | 'resolved'> {}
+
 // Modelo de Cliente
 export class Customer extends Model<CustomerAttributes, CustomerCreationAttributes> implements CustomerAttributes {
   public id!: number;
@@ -147,6 +163,65 @@ if (typeof window === 'undefined') {
       sequelize,
       modelName: 'Customer',
       tableName: 'customers',
+      timestamps: true,
+      underscored: true
+    }
+  );
+  
+  // Initialize OrphanedRuleLog model
+  OrphanedRuleLog.init(
+    {
+      id: {
+        type: DataTypes.INTEGER,
+        primaryKey: true,
+        autoIncrement: true
+      },
+      priceRuleId: {
+        type: DataTypes.STRING(255),
+        allowNull: false,
+        field: 'price_rule_id'
+      },
+      couponCode: {
+        type: DataTypes.STRING(255),
+        allowNull: false,
+        field: 'coupon_code'
+      },
+      errorMessage: {
+        type: DataTypes.TEXT,
+        allowNull: false,
+        field: 'error_message'
+      },
+      errorDetails: {
+        type: DataTypes.JSON,
+        allowNull: true,
+        field: 'error_details'
+      },
+      shopifyResponse: {
+        type: DataTypes.JSON,
+        allowNull: true,
+        field: 'shopify_response'
+      },
+      attemptCount: {
+        type: DataTypes.INTEGER,
+        allowNull: false,
+        defaultValue: 1,
+        field: 'attempt_count'
+      },
+      resolved: {
+        type: DataTypes.BOOLEAN,
+        allowNull: false,
+        defaultValue: false
+      },
+      resolvedAt: {
+        type: DataTypes.DATE,
+        allowNull: true,
+        field: 'resolved_at'
+      }
+    },
+    {
+      sequelize,
+      modelName: 'OrphanedRuleLog',
+      tableName: 'orphaned_rule_logs',
       timestamps: true,
       underscored: true
     }
@@ -424,6 +499,22 @@ export class Employee extends Model<EmployeeAttributes, EmployeeCreationAttribut
   public role!: 'employee';
   public isActive!: boolean;
   public lastLogin?: Date;
+
+  public readonly createdAt!: Date;
+  public readonly updatedAt!: Date;
+}
+
+// Modelo de Log de Reglas Huérfanas
+export class OrphanedRuleLog extends Model<OrphanedRuleLogAttributes, OrphanedRuleLogCreationAttributes> implements OrphanedRuleLogAttributes {
+  public id!: number;
+  public priceRuleId!: string;
+  public couponCode!: string;
+  public errorMessage!: string;
+  public errorDetails?: any;
+  public shopifyResponse?: any;
+  public attemptCount!: number;
+  public resolved!: boolean;
+  public resolvedAt?: Date;
 
   public readonly createdAt!: Date;
   public readonly updatedAt!: Date;
@@ -728,6 +819,7 @@ const models = {
   User,
   SuperAdmin,
   Employee,
+  OrphanedRuleLog,
   updateExpiredCoupons,
   findCouponsByEmail,
   findCouponByCode,
