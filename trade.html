@@ -1,0 +1,1558 @@
+<body>
+
+
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Trade-In Your Mattress - LA Mattress</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        :root {
+            --primary: #000000;
+            --secondary: #1a1a1a;
+            --brand-blue: #1B9CD8;
+            --brand-red: #E8374A;
+            --bg-light: #FFFFFF;
+            --bg-gray: #F8F8F8;
+            --text-primary: #000000;
+            --text-secondary: #666666;
+            --text-light: #999999;
+            --border: #E5E5E5;
+            --success: #00C853;
+            --error: #E8374A;
+            --shadow-sm: 0 2px 8px rgba(0, 0, 0, 0.06);
+            --shadow-md: 0 4px 16px rgba(0, 0, 0, 0.08);
+            --shadow-lg: 0 8px 32px rgba(0, 0, 0, 0.12);
+        }
+
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+            background: var(--bg-light);
+            color: var(--text-primary);
+            line-height: 1.6;
+            overflow-x: hidden;
+        }
+
+        /* Messages */
+        .message {
+            position: fixed;
+            top: 100px;
+            right: 20px;
+            padding: 16px 24px;
+            border-radius: 8px;
+            box-shadow: var(--shadow-lg);
+            display: none;
+            animation: slideIn 0.3s ease;
+            z-index: 10001;
+            max-width: 400px;
+            background: white;
+            border: 1px solid var(--border);
+        }
+
+        @keyframes slideIn {
+            from { transform: translateX(100%); }
+            to { transform: translateX(0); }
+        }
+
+        .message.success {
+            border-left: 4px solid var(--success);
+        }
+
+        .message.error {
+            border-left: 4px solid var(--error);
+        }
+
+        /* Loading State */
+        .loading {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(255, 255, 255, 0.95);
+            z-index: 9999;
+            align-items: center;
+            justify-content: center;
+            flex-direction: column;
+        }
+
+        .loading.active {
+            display: flex;
+        }
+
+        .spinner {
+            width: 40px;
+            height: 40px;
+            border: 3px solid var(--border);
+            border-top-color: var(--primary);
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        .loading-text {
+            margin-top: 1rem;
+            font-size: 0.95rem;
+            color: var(--text-secondary);
+        }
+
+        /* Navigation */
+        nav {
+            position: fixed;
+            top: 0;
+            width: 100%;
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+            z-index: 1000;
+            border-bottom: 1px solid var(--border);
+        }
+
+        .nav-container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 1.25rem 2rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .logo {
+            display: flex;
+            align-items: center;
+            text-decoration: none;
+            gap: 0;
+        }
+
+        .logo-mark {
+            width: 50px;
+            height: 40px;
+            background: #1B9CD8;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            position: relative;
+            border-radius: 3px;
+        }
+
+        .logo-mark::after {
+            content: '';
+            position: absolute;
+            right: -10px;
+            top: 0;
+            bottom: 0;
+            width: 10px;
+            background: #E8374A;
+            border-radius: 0 3px 3px 0;
+        }
+
+        .logo-la {
+            color: white;
+            font-size: 28px;
+            font-weight: 900;
+            letter-spacing: -2px;
+        }
+
+        .logo-text {
+            font-size: 1.75rem;
+            font-weight: 900;
+            color: var(--primary);
+            letter-spacing: -0.02em;
+            margin-left: 20px;
+        }
+
+
+
+        /* Hero Section */
+        .hero {
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            padding: 120px 2rem 4rem;
+            background: var(--bg-light);
+            position: relative;
+        }
+
+        .hero::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-image: 
+                radial-gradient(circle at 20% 50%, rgba(27, 156, 216, 0.03) 0%, transparent 50%),
+                radial-gradient(circle at 80% 50%, rgba(232, 55, 74, 0.03) 0%, transparent 50%);
+            pointer-events: none;
+        }
+
+        .hero-content {
+            max-width: 1200px;
+            margin: 0 auto;
+            width: 100%;
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 4rem;
+            align-items: center;
+            position: relative;
+            z-index: 1;
+        }
+
+        .hero-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            padding: 8px 16px;
+            background: var(--bg-gray);
+            border-radius: 100px;
+            font-size: 0.875rem;
+            font-weight: 500;
+            color: var(--text-secondary);
+            margin-bottom: 2rem;
+        }
+
+        .badge-dot {
+            width: 8px;
+            height: 8px;
+            background: var(--success);
+            border-radius: 50%;
+            animation: pulse 2s ease-in-out infinite;
+        }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 1; transform: scale(1); }
+            50% { opacity: 0.8; transform: scale(1.2); }
+        }
+
+        h1 {
+            font-size: clamp(3rem, 6vw, 4.5rem);
+            font-weight: 900;
+            line-height: 1.1;
+            letter-spacing: -0.03em;
+            margin-bottom: 1.5rem;
+            color: var(--primary);
+        }
+
+        .hero-subtitle {
+            font-size: 1.25rem;
+            font-weight: 400;
+            color: var(--text-secondary);
+            margin-bottom: 2rem;
+            line-height: 1.6;
+        }
+
+        .value-props {
+            display: flex;
+            gap: 3rem;
+            margin-bottom: 3rem;
+        }
+
+        .value-item {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .value-number {
+            font-size: 2.5rem;
+            font-weight: 900;
+            color: var(--primary);
+            line-height: 1;
+        }
+
+        .value-text {
+            font-size: 0.875rem;
+            color: var(--text-secondary);
+            line-height: 1.4;
+        }
+
+        .hero-cta {
+            display: inline-block;
+            background: var(--brand-blue);
+            color: white;
+            padding: 18px 40px;
+            border-radius: 8px;
+            font-weight: 600;
+            font-size: 1.1rem;
+            text-decoration: none;
+            transition: all 0.3s ease;
+            cursor: pointer;
+            border: none;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .hero-cta:hover {
+            background: #1476A8;
+            transform: translateY(-2px);
+            box-shadow: var(--shadow-lg);
+        }
+
+        .trust-row {
+            display: flex;
+            gap: 2rem;
+            margin-top: 3rem;
+            padding-top: 3rem;
+            border-top: 1px solid var(--border);
+        }
+
+        .trust-item {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 0.875rem;
+            color: var(--text-secondary);
+        }
+
+        .trust-icon {
+            width: 20px;
+            height: 20px;
+            color: var(--success);
+        }
+
+        /* Form Container */
+        .form-container {
+            background: white;
+            padding: 3rem;
+            border-radius: 16px;
+            box-shadow: var(--shadow-lg);
+            border: 1px solid var(--border);
+            max-width: 500px;
+            width: 100%;
+            margin-left: auto;
+        }
+
+        .form-header {
+            text-align: center;
+            margin-bottom: 2.5rem;
+        }
+
+        .form-title {
+            font-size: 1.75rem;
+            font-weight: 800;
+            margin-bottom: 0.5rem;
+            color: var(--primary);
+        }
+
+        .form-subtitle {
+            color: var(--text-secondary);
+            font-size: 0.95rem;
+        }
+
+        .credit-display {
+            background: var(--bg-gray);
+            padding: 1.5rem;
+            border-radius: 12px;
+            text-align: center;
+            margin-bottom: 2rem;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .credit-label {
+            font-size: 0.875rem;
+            color: var(--text-secondary);
+            margin-bottom: 0.5rem;
+        }
+
+        .credit-amount {
+            font-size: 2.5rem;
+            font-weight: 900;
+            color: var(--primary);
+            line-height: 1;
+        }
+
+        .progress-dots {
+            display: flex;
+            justify-content: center;
+            gap: 8px;
+            margin-bottom: 2rem;
+        }
+
+        .dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: var(--border);
+            transition: all 0.3s ease;
+        }
+
+        .dot.active {
+            width: 32px;
+            border-radius: 4px;
+            background: var(--brand-blue);
+        }
+
+        .form-step {
+            display: none;
+            animation: fadeIn 0.3s ease;
+        }
+
+        .form-step.active {
+            display: block;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .form-group {
+            margin-bottom: 1.5rem;
+        }
+
+        .form-row {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 1rem;
+        }
+
+        label {
+            display: block;
+            font-size: 0.875rem;
+            font-weight: 600;
+            color: var(--primary);
+            margin-bottom: 0.5rem;
+        }
+
+        input, select, textarea {
+            width: 100%;
+            padding: 14px 16px;
+            border: 2px solid var(--border);
+            border-radius: 8px;
+            font-size: 1rem;
+            font-family: inherit;
+            transition: all 0.2s ease;
+            background: white;
+        }
+
+        input:focus, select:focus, textarea:focus {
+            outline: none;
+            border-color: var(--primary);
+        }
+
+        input.error, select.error {
+            border-color: var(--error);
+        }
+
+        .error-text {
+            font-size: 0.75rem;
+            color: var(--error);
+            margin-top: 0.25rem;
+            display: none;
+        }
+
+        .error-text.show {
+            display: block;
+        }
+
+        .btn {
+            width: 100%;
+            padding: 16px;
+            border: none;
+            border-radius: 8px;
+            font-size: 1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-family: inherit;
+        }
+
+        .btn-primary {
+            background: var(--brand-blue);
+            color: white;
+        }
+
+        .btn-primary:hover {
+            background: #1476A8;
+            transform: translateY(-1px);
+        }
+
+        .btn-secondary {
+            background: transparent;
+            color: var(--primary);
+            border: 2px solid var(--border);
+        }
+
+        .btn-secondary:hover {
+            border-color: var(--primary);
+        }
+
+        .form-controls {
+            display: flex;
+            gap: 1rem;
+            margin-top: 2rem;
+        }
+
+        .condition-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 1rem;
+            margin-top: 1rem;
+        }
+
+        .condition-card {
+            padding: 1.5rem;
+            border: 2px solid var(--border);
+            border-radius: 12px;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            background: white;
+        }
+
+        .condition-card:hover {
+            border-color: var(--primary);
+            transform: translateY(-2px);
+            box-shadow: var(--shadow-md);
+        }
+
+        .condition-card.selected {
+            border-color: var(--primary);
+            background: var(--bg-gray);
+        }
+
+        .condition-icon {
+            font-size: 2rem;
+            margin-bottom: 0.5rem;
+        }
+
+        .condition-title {
+            font-weight: 600;
+            font-size: 0.95rem;
+            margin-bottom: 0.25rem;
+        }
+
+        .condition-desc {
+            font-size: 0.75rem;
+            color: var(--text-secondary);
+        }
+
+        .result-card {
+            text-align: center;
+            padding: 2rem;
+        }
+
+        .result-icon {
+            font-size: 4rem;
+            margin-bottom: 1rem;
+        }
+
+        .result-title {
+            font-size: 2rem;
+            font-weight: 800;
+            margin-bottom: 1rem;
+        }
+
+        .result-credit {
+            font-size: 3rem;
+            font-weight: 900;
+            color: var(--success);
+            margin: 1rem 0;
+        }
+
+        .result-code {
+            display: inline-block;
+            background: var(--primary);
+            color: white;
+            padding: 1rem 2rem;
+            border-radius: 8px;
+            font-size: 1.25rem;
+            font-weight: 700;
+            letter-spacing: 0.05em;
+            margin: 1rem 0;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .result-code:hover {
+            transform: scale(1.05);
+        }
+
+        .features-row {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 1rem;
+            margin: 2rem 0;
+        }
+
+        .feature-item {
+            text-align: center;
+            padding: 1rem;
+        }
+
+        .feature-icon {
+            font-size: 2rem;
+            margin-bottom: 0.5rem;
+        }
+
+        .feature-text {
+            font-size: 0.875rem;
+            color: var(--text-secondary);
+        }
+
+        .warning-box {
+            background: #FFE6E6;
+            border: 2px solid #E8374A;
+            border-radius: 8px;
+            padding: 1.5rem;
+            margin-top: 2rem;
+        }
+
+        .warning-box p {
+            color: #e8374a;
+            font-weight: bold;
+            font-size: 1.1rem;
+            text-align: center;
+            margin: 0;
+        }
+
+        .warning-box p:last-child {
+            color: #b91c1c;
+            font-size: 0.9rem;
+            margin-top: 0.5rem;
+            margin-bottom: 0;
+        }
+
+        .info-card {
+            background: linear-gradient(135deg, #fef2f2 0%, #fee2e2 100%);
+            border: 3px solid var(--brand-red);
+            border-radius: 16px;
+            padding: 2rem;
+            margin-top: 1.5rem;
+            box-shadow: 0 8px 25px rgba(232, 55, 74, 0.15);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .info-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 4px;
+            background: linear-gradient(90deg, var(--brand-red) 0%, #dc2626 50%, var(--brand-red) 100%);
+        }
+
+        .info-header {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+            margin-bottom: 1.25rem;
+            padding-bottom: 0.75rem;
+            border-bottom: 2px solid rgba(232, 55, 74, 0.2);
+        }
+
+        .info-icon {
+            font-size: 2rem;
+            color: var(--brand-red);
+            background: white;
+            padding: 0.5rem;
+            border-radius: 50%;
+            box-shadow: 0 4px 12px rgba(232, 55, 74, 0.2);
+        }
+
+        .info-title {
+            font-size: 1.3rem;
+            font-weight: 800;
+            color: var(--brand-red);
+            margin: 0;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .info-content {
+            display: flex;
+            flex-direction: column;
+            gap: 1rem;
+        }
+
+        .info-item {
+            display: flex;
+            align-items: flex-start;
+            gap: 1rem;
+            background: white;
+            padding: 1rem;
+            border-radius: 10px;
+            border-left: 4px solid var(--brand-red);
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+        }
+
+        .info-bullet {
+            color: var(--brand-red);
+            font-weight: 900;
+            font-size: 1.2rem;
+            line-height: 1.5;
+            flex-shrink: 0;
+            background: #fef2f2;
+            width: 24px;
+            height: 24px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .info-item p {
+            margin: 0;
+            color: #374151;
+            font-size: 1rem;
+            line-height: 1.6;
+            font-weight: 500;
+        }
+
+        .info-item strong {
+            color: var(--brand-red);
+            font-weight: 700;
+        }
+
+        .mobile-menu-btn {
+            display: none;
+            background: none;
+            border: none;
+            cursor: pointer;
+            padding: 8px;
+        }
+
+        .mobile-menu-btn span {
+            display: block;
+            width: 24px;
+            height: 2px;
+            background: var(--primary);
+            margin: 5px 0;
+            transition: all 0.3s ease;
+        }
+
+        /* Mobile Responsive */
+        @media (max-width: 968px) {
+            .hero-content {
+                grid-template-columns: 1fr;
+                gap: 3rem;
+            }
+
+            .form-container {
+                max-width: 100%;
+                margin: 0;
+            }
+
+            .value-props {
+                flex-wrap: wrap;
+                gap: 2rem;
+            }
+        }
+
+        @media (max-width: 768px) {
+            .nav-links {
+                display: none;
+            }
+
+            .mobile-menu-btn {
+                display: block;
+            }
+
+            .hero {
+                padding: 100px 1rem 2rem;
+            }
+
+            h1 {
+                font-size: 2.5rem;
+            }
+
+            .form-container {
+                padding: 2rem;
+            }
+
+            .form-row {
+                grid-template-columns: 1fr;
+            }
+
+            .condition-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .features-row {
+                grid-template-columns: 1fr;
+                gap: 0.5rem;
+            }
+        }
+
+        /* Utility Classes */
+        .text-center { text-align: center; }
+        .mt-1 { margin-top: 0.5rem; }
+        .mt-2 { margin-top: 1rem; }
+        .mt-3 { margin-top: 1.5rem; }
+    </style>
+
+
+    <!-- Messages -->
+    <div id="successMessage" class="message success">
+        <strong>Success!</strong> <span class="message-text"></span>
+    </div>
+    <div id="errorMessage" class="message error">
+        <strong>Error!</strong> <span class="message-text"></span>
+    </div>
+    
+    <!-- Loading State -->
+    <div id="loading" class="loading">
+        <div class="spinner"></div>
+        <p class="loading-text">Calculating your trade-in credit...</p>
+    </div>
+    
+    <!-- Navigation -->
+    <nav>
+        <div class="nav-container">
+            <a href="https://mattressstoreslosangeles.com" class="logo">
+                <div class="logo-mark"><span class="logo-la">LA</span></div>
+                <span class="logo-text">MATTRESS</span>
+            </a>
+
+            <button class="mobile-menu-btn" id="mobileMenuBtn">
+                <span></span>
+                <span></span>
+                <span></span>
+            </button>
+        </div>
+    </nav>
+    
+    <!-- Hero Section -->
+    <section class="hero">
+        <div class="hero-content">
+            <!-- Left Column -->
+            <div class="hero-text">
+                <div class="hero-badge">
+                    <span class="badge-dot"></span>
+                    <span>Instant Mattress Evaluation - No Photos Needed</span>
+                </div>
+                <h1>Turn Your Old Mattress Into Cash</h1>
+                <p class="hero-subtitle">Get up to $400 instant credit when you trade in your mattress. Quick evaluation, free pickup, and eco-friendly disposal.</p>
+                <div class="value-props">
+                    <div class="value-item">
+                        <div class="value-number">30</div>
+                        <div class="value-text">Second<br>Evaluation</div>
+                    </div>
+                    <div class="value-item">
+                        <div class="value-number">$400</div>
+                        <div class="value-text">Maximum<br>Credit</div>
+                    </div>
+                </div>
+                <button class="hero-cta" onclick="scrollToForm()">Start Your Trade-In →</button>
+                <div class="trust-row">
+                    <div class="trust-item">
+                        <svg class="trust-icon" fill="currentColor" viewbox="0 0 20 20">
+                            <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"></path>
+                        </svg>
+                        <span>Free Pickup</span>
+                    </div>
+                    <div class="trust-item">
+                        <svg class="trust-icon" fill="currentColor" viewbox="0 0 20 20">
+                            <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"></path>
+                        </svg>
+                        <span>100% Recycled</span>
+                    </div>
+                    <div class="trust-item">
+                        <svg class="trust-icon" fill="currentColor" viewbox="0 0 20 20">
+                            <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"></path>
+                        </svg>
+                        <span>5 LA Locations</span>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Right Column - Form -->
+            <div class="form-container" id="tradeForm">
+                <div class="form-header">
+                    <h2 class="form-title">Get Your Trade-In Credit</h2>
+                    <p class="form-subtitle">Takes only 30 seconds</p>
+                </div>
+                
+                <div class="credit-display">
+                    <p class="credit-label">Estimated Credit</p>
+                    <p class="credit-amount" id="creditDisplay">$80 - $400</p>
+                </div>
+                
+                <div class="progress-dots">
+                    <span class="dot active" id="dot1"></span>
+                    <span class="dot" id="dot2"></span>
+                    <span class="dot" id="dot3"></span>
+                </div>
+                
+                <!-- Step 1: Contact Info -->
+                <div class="form-step active" id="step1">
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label>First Name</label>
+                            <input type="text" id="firstName" placeholder="John" required>
+                            <span class="error-text">Required</span>
+                        </div>
+                        <div class="form-group">
+                            <label>Last Name</label>
+                            <input type="text" id="lastName" placeholder="Doe" required>
+                            <span class="error-text">Required</span>
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label>Email</label>
+                        <input type="email" id="email" placeholder="john@example.com" required>
+                        <span class="error-text">Please enter a valid email</span>
+                    </div>
+                    <div class="form-group">
+                        <label>Phone</label>
+                        <input type="tel" id="phone" placeholder="(310) 555-0123" required>
+                        <span class="error-text">Please enter a valid phone number</span>
+                    </div>
+                    <div class="form-group">
+                        <label>ZIP Code</label>
+                        <input type="text" id="zipcode" placeholder="90001" maxlength="5" required>
+                        <span class="error-text">Please enter a valid ZIP code</span>
+                    </div>
+                    <button class="btn btn-primary" onclick="nextStep(1)">Continue</button>
+                </div>
+                
+                <!-- Step 2: Mattress Info -->
+                <div class="form-step" id="step2">
+                    <div class="form-group">
+                        <label>Mattress Brand</label>
+                        <select id="brand" required>
+                            <option value="">Select brand...</option>
+                            <optgroup label="Premium Brands">
+                                <option value="tempur-pedic">Tempur-Pedic</option>
+                                <option value="stearns-foster">Stearns &amp; Foster</option>
+                                <option value="chattam-wells">Chattam &amp; Wells</option>
+                                <option value="technogel">Technogel</option>
+                                <option value="saatva">Saatva</option>
+                                <option value="avocado">Avocado</option>
+                                <option value="winkbed">WinkBed</option>
+                            </optgroup>
+                            <optgroup label="Luxury Brands">
+                                <option value="diamond">Diamond</option>
+                                <option value="scandinavian">Scandinavian</option>
+                                <option value="harvest">Harvest</option>
+                                <option value="beautyrest-black">Beautyrest Black</option>
+                            </optgroup>
+                            <optgroup label="Online Brands">
+                                <option value="casper">Casper</option>
+                                <option value="purple">Purple</option>
+                                <option value="nectar">Nectar</option>
+                                <option value="tuft-needle">Tuft &amp; Needle</option>
+                                <option value="helix">Helix</option>
+                                <option value="leesa">Leesa</option>
+                                <option value="layla">Layla</option>
+                                <option value="dreamcloud">DreamCloud</option>
+                            </optgroup>
+                            <optgroup label="Traditional Brands">
+                                <option value="sealy">Sealy</option>
+                                <option value="serta">Serta</option>
+                                <option value="beautyrest">Beautyrest</option>
+                                <option value="spring-air">Spring Air</option>
+                                <option value="englander">Englander</option>
+                                <option value="southerland">Southerland</option>
+                                <option value="eastman-house">Eastman House</option>
+                                <option value="simmons">Simmons</option>
+                            </optgroup>
+                            <optgroup label="Budget Brands">
+                                <option value="zinus">Zinus</option>
+                                <option value="lucid">Lucid</option>
+                                <option value="signature-sleep">Signature Sleep</option>
+                                <option value="ikea">IKEA</option>
+                            </optgroup>
+                            <option value="other">Other</option>
+                        </select>
+                        <span class="error-text">Please select a brand</span>
+                    </div>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label>Size</label>
+                            <select id="size" required>
+                                <option value="">Select...</option>
+                                <option value="twin">Twin</option>
+                                <option value="full">Full</option>
+                                <option value="queen">Queen</option>
+                                <option value="king">King</option>
+                                <option value="cal-king">Cal King</option>
+                            </select>
+                            <span class="error-text">Required</span>
+                        </div>
+                        <div class="form-group">
+                            <label>Age (Years)</label>
+                            <input type="number" id="age" placeholder="5" min="0" max="30" required>
+                            <span class="error-text">Required</span>
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label>Condition</label>
+                        <div class="condition-grid">
+                            <div class="condition-card" onclick="selectCondition('excellent', this)">
+                                <div class="condition-icon">✨</div>
+                                <div class="condition-title">Excellent</div>
+                                <div class="condition-desc">Like new</div>
+                            </div>
+                            <div class="condition-card" onclick="selectCondition('good', this)">
+                                <div class="condition-icon">👍</div>
+                                <div class="condition-title">Good</div>
+                                <div class="condition-desc">Light wear</div>
+                            </div>
+                            <div class="condition-card" onclick="selectCondition('fair', this)">
+                                <div class="condition-icon">👌</div>
+                                <div class="condition-title">Fair</div>
+                                <div class="condition-desc">Some wear</div>
+                            </div>
+                            <div class="condition-card" onclick="selectCondition('poor', this)">
+                                <div class="condition-icon">🤔</div>
+                                <div class="condition-title">Poor</div>
+                                <div class="condition-desc">Heavy wear</div>
+                            </div>
+                        </div>
+                        <input type="hidden" id="condition" required>
+                        <span class="error-text">Please select condition</span>
+                    </div>
+                    <div class="form-controls">
+                        <button class="btn btn-secondary" onclick="previousStep(2)">Back</button>
+                        <button class="btn btn-primary" onclick="calculateCredit()">Get Your Credit</button>
+                    </div>
+                </div>
+                
+                <!-- Step 3: Results -->
+                <div class="form-step" id="step3">
+                    <div class="result-card">
+                        <div class="result-icon">🎉</div>
+                        <h3 class="result-title">Congratulations!</h3>
+                        <p>Your trade-in credit:</p>
+                        <p class="result-credit" id="finalCredit">$0</p>
+                        <div class="result-code" id="resultCode" onclick="copyCode()">XXXX</div>
+                        <p class="text-center mt-1">Click to copy code</p>
+                        <div class="features-row">
+                            <div class="feature-item">
+                                <div class="feature-icon">🚚</div>
+                                <div class="feature-text">Free Pickup</div>
+                            </div>
+                            <div class="feature-item">
+                                <div class="feature-icon">♻️</div>
+                                <div class="feature-text">Eco-Friendly</div>
+                            </div>
+                            <div class="feature-item">
+                                <div class="feature-icon">📍</div>
+                                <div class="feature-text">5 Locations</div>
+                            </div>
+                        </div>
+                        <button class="btn btn-primary mt-3" onclick="window.open('https://mattressstoreslosangeles.com/collections', '_blank')">
+                            Shop New Mattresses →
+                        </button>
+                        <div class="warning-box" style="display:none">
+                            <p>⚠ IMPORTANT: This credit can only be used to purchase a mattress of the same size or larger than your trade-in</p>
+                            <p>(Example: Queen trade-in credit can be used for Queen or King size only)</p>
+                        </div>
+                        
+                        <!-- Trade-in Information Card -->
+                        <div class="info-card">
+                            <div class="info-header">
+                                <div class="info-icon">ℹ️</div>
+                                <h3 class="info-title">Trade-In Program Details</h3>
+                            </div>
+                            <div class="info-content">
+                                <div class="info-item">
+                                    <div class="info-bullet">•</div>
+                                    <p>Mattress trade-in only applies to <strong>equal or larger size</strong> mattresses</p>
+                                </div>
+                                <div class="info-item">
+                                    <div class="info-bullet">•</div>
+                                    <p>Your credit can be used <strong>online</strong> and at our <strong>physical store locations</strong></p>
+                                </div>
+                                <div class="info-item">
+                                    <div class="info-bullet">•</div>
+                                    <p>Free pickup service available within our delivery area</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+    
+    <!-- Footer / Powered by -->
+    <div style="text-align: center; padding: 2rem 1rem; background: #f8f8f8; border-top: 1px solid #e5e5e5;">
+        <p style="color: #999; font-size: 0.875rem; margin: 0;">
+            Powered by <a href="https://merktop.com" target="_blank" style="color: #1b9cd8; text-decoration: none; font-weight: 600;">Merktop</a>
+        </p>
+    </div>
+
+    <script>
+        // Backend configuration - Updated to Railway deployment
+        const BACKEND_URL = 'https://lamattressubscription.merktop.com/api/webhook/shopify-coupon';
+        
+        // Form Data
+        let formData = {
+            firstName: '',
+            lastName: '',
+            email: '',
+            phone: '',
+            zipcode: '',
+            brand: '',
+            size: '',
+            age: '',
+            condition: ''
+        };
+
+        // Scroll to form
+        function scrollToForm() {
+            document.getElementById('tradeForm').scrollIntoView({ behavior: 'smooth', block: 'center' });
+        }
+
+        // Navigation functions
+        function nextStep(currentStep) {
+            if (validateStep(currentStep)) {
+                saveFormData(currentStep);
+                document.getElementById('step' + currentStep).classList.remove('active');
+                document.getElementById('step' + (currentStep + 1)).classList.add('active');
+                updateProgressDots(currentStep + 1);
+                updateCreditDisplay();
+            }
+        }
+
+        function previousStep(currentStep) {
+            document.getElementById('step' + currentStep).classList.remove('active');
+            document.getElementById('step' + (currentStep - 1)).classList.add('active');
+            updateProgressDots(currentStep - 1);
+        }
+
+        // Update progress dots
+        function updateProgressDots(step) {
+            for (let i = 1; i <= 3; i++) {
+                const dot = document.getElementById('dot' + i);
+                if (i <= step) {
+                    dot.classList.add('active');
+                } else {
+                    dot.classList.remove('active');
+                }
+            }
+        }
+
+        // Validate current step
+        function validateStep(step) {
+            let isValid = true;
+            
+            if (step === 1) {
+                // Validate contact info
+                const fields = ['firstName', 'lastName', 'email', 'phone', 'zipcode'];
+                fields.forEach(field => {
+                    const input = document.getElementById(field);
+                    const errorText = input.nextElementSibling;
+                    
+                    if (!input.value.trim()) {
+                        input.classList.add('error');
+                        errorText.classList.add('show');
+                        isValid = false;
+                    } else {
+                        input.classList.remove('error');
+                        errorText.classList.remove('show');
+                    }
+                    
+                    // Additional validation for specific fields
+                    if (field === 'email' && input.value && !isValidEmail(input.value)) {
+                        input.classList.add('error');
+                        errorText.classList.add('show');
+                        isValid = false;
+                    }
+                    
+                    if (field === 'phone' && input.value && !isValidPhone(input.value)) {
+                        input.classList.add('error');
+                        errorText.classList.add('show');
+                        isValid = false;
+                    }
+                    
+                    if (field === 'zipcode' && input.value && !isValidZip(input.value)) {
+                        input.classList.add('error');
+                        errorText.classList.add('show');
+                        isValid = false;
+                    }
+                });
+            }
+            
+            return isValid;
+        }
+
+        // Validation helpers
+        function isValidEmail(email) {
+            return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
+        }
+
+        function isValidPhone(phone) {
+            return /^[\d\s\-\(\)]+$/.test(phone) && phone.replace(/\D/g, '').length >= 10;
+        }
+
+        function isValidZip(zip) {
+            return /^\d{5}$/.test(zip);
+        }
+
+        // Save form data
+        function saveFormData(step) {
+            if (step === 1) {
+                formData.firstName = document.getElementById('firstName').value;
+                formData.lastName = document.getElementById('lastName').value;
+                formData.email = document.getElementById('email').value;
+                formData.phone = document.getElementById('phone').value;
+                formData.zipcode = document.getElementById('zipcode').value;
+            } else if (step === 2) {
+                formData.brand = document.getElementById('brand').value;
+                formData.size = document.getElementById('size').value;
+                formData.age = document.getElementById('age').value;
+                formData.condition = document.getElementById('condition').value;
+            }
+        }
+
+        // Select condition
+        function selectCondition(condition, element) {
+            // Remove selected class from all cards
+            document.querySelectorAll('.condition-card').forEach(card => {
+                card.classList.remove('selected');
+            });
+            
+            // Add selected class to clicked card
+            element.classList.add('selected');
+            
+            // Set hidden input value
+            document.getElementById('condition').value = condition;
+            
+            // Remove error if present
+            const errorText = document.querySelector('#condition').nextElementSibling;
+            errorText.classList.remove('show');
+        }
+
+        // Update credit display based on selections
+        function updateCreditDisplay() {
+            const brand = document.getElementById('brand').value;
+            const size = document.getElementById('size').value;
+            
+            if (brand && size) {
+                const { min, max } = calculateCreditRange(brand, size);
+                document.getElementById('creditDisplay').textContent = `$${min} - $${max}`;
+            }
+        }
+
+        // Calculate credit range
+        function calculateCreditRange(brand, size) {
+            let baseCredit = 100;
+            
+            // Brand multipliers
+            const brandMultipliers = {
+                'tempur-pedic': 2.0,
+                'stearns-foster': 1.8,
+                'chattam-wells': 1.7,
+                'technogel': 1.9,
+                'saatva': 1.6,
+                'avocado': 1.5,
+                'winkbed': 1.4,
+                'diamond': 1.7,
+                'scandinavian': 1.7,
+                'harvest': 1.6,
+                'beautyrest-black': 1.5,
+                'casper': 1.3,
+                'purple': 1.3,
+                'nectar': 1.2,
+                'tuft-needle': 1.2,
+                'helix': 1.2,
+                'leesa': 1.2,
+                'layla': 1.2,
+                'dreamcloud': 1.2,
+                'sealy': 1.1,
+                'serta': 1.1,
+                'beautyrest': 1.1,
+                'spring-air': 1.0,
+                'englander': 1.0,
+                'southerland': 1.0,
+                'eastman-house': 1.0,
+                'simmons': 1.0,
+                'zinus': 0.8,
+                'lucid': 0.8,
+                'signature-sleep': 0.8,
+                'ikea': 0.8,
+                'other': 0.9
+            };
+            
+            // Size multipliers
+            const sizeMultipliers = {
+                'twin': 0.8,
+                'full': 0.9,
+                'queen': 1.0,
+                'king': 1.2,
+                'cal-king': 1.2
+            };
+            
+            const brandMult = brandMultipliers[brand] || 1;
+            const sizeMult = sizeMultipliers[size] || 1;
+            
+            const min = Math.round(baseCredit * brandMult * sizeMult * 0.8);
+            const max = Math.round(baseCredit * brandMult * sizeMult * 2.0);
+            
+            return { min: Math.min(min, 400), max: Math.min(max, 400) };
+        }
+
+        // Calculate final credit and create coupon
+        async function calculateCredit() {
+            if (!validateStep2()) return;
+            
+            saveFormData(2);
+            
+            // Show loading
+            document.getElementById('loading').classList.add('active');
+            
+            try {
+                const credit = calculateFinalCredit();
+                const code = generateCode();
+                
+                // Create coupon data for Railway backend with customer info
+                const couponData = {
+                    code: code,
+                    description: `Trade-In Credit for ${formData.firstName} ${formData.lastName}`,
+                    discount_type: 'fixed_amount',
+                    discount_value: credit,
+                    customer_email: formData.email,  // Added customer email
+                    customer_name: `${formData.firstName} ${formData.lastName}`,  // Added customer name
+                    valid_from: new Date().toISOString(),
+                    valid_until: new Date(Date.now() + 90 * 24 * 60 * 60 * 1000).toISOString(),
+                    max_uses: 1,
+                    minimum_purchase: 0
+                };
+
+                // Prepare headers - No auth needed for Railway backend
+                const headers = {
+                    'Content-Type': 'application/json',
+                    'Accept': 'application/json'
+                };
+
+                // Send to Railway backend - /api/coupons endpoint
+                const response = await fetch(BACKEND_URL, {
+                  method: 'POST',
+                  headers: headers,
+                  body: JSON.stringify(couponData)
+              });
+
+                const result = await response.json();
+
+                if (response.ok && result.success) {
+                    // Success - coupon created in backend
+                    handleSuccess(credit, code);
+                } else {
+                    // Backend returned an error, but still show the code to customer
+                    handleSuccess(credit, code);
+                    console.warn('Coupon creation failed in backend:', result.message);
+                }
+                
+            } catch (error) {
+                console.error('Error creating coupon:', error);
+                
+                // Even if there's an error, show the code to the customer
+                const credit = calculateFinalCredit();
+                const code = generateCode();
+                handleSuccess(credit, code);
+                
+                // Show warning that backend save failed
+                setTimeout(() => {
+                    showMessage('Credit created locally. Please contact support if issues persist.', 'error');
+                }, 2000);
+            }
+        }
+
+        // Handle successful creation
+        function handleSuccess(credit, code) {
+            // Store customer data locally
+            storeCustomerData(code, credit);
+            
+            // Update display
+            document.getElementById('finalCredit').textContent = `$${credit}`;
+            document.getElementById('resultCode').textContent = code;
+            
+            // Hide loading
+            document.getElementById('loading').classList.remove('active');
+            
+            // Show results
+            document.getElementById('step2').classList.remove('active');
+            document.getElementById('step3').classList.add('active');
+            updateProgressDots(3);
+            
+            showMessage('Trade-in credit created successfully!', 'success');
+        }
+
+        // Store customer data for tracking
+        function storeCustomerData(code, credit) {
+            try {
+                const customerData = {
+                    ...formData,
+                    trade_in_code: code,
+                    credit_amount: credit,
+                    created_at: new Date().toISOString()
+                };
+
+                // Store in localStorage for demo purposes
+                const tradeIns = JSON.parse(localStorage.getItem('tradeIns') || '[]');
+                tradeIns.push(customerData);
+                localStorage.setItem('tradeIns', JSON.stringify(tradeIns));
+                
+            } catch (error) {
+                console.error('Error storing customer data:', error);
+            }
+        }
+
+        // Validate step 2
+        function validateStep2() {
+            let isValid = true;
+            
+            // Validate brand
+            const brand = document.getElementById('brand');
+            if (!brand.value) {
+                brand.classList.add('error');
+                brand.nextElementSibling.classList.add('show');
+                isValid = false;
+            } else {
+                brand.classList.remove('error');
+                brand.nextElementSibling.classList.remove('show');
+            }
+            
+            // Validate size
+            const size = document.getElementById('size');
+            if (!size.value) {
+                size.classList.add('error');
+                size.nextElementSibling.classList.add('show');
+                isValid = false;
+            } else {
+                size.classList.remove('error');
+                size.nextElementSibling.classList.remove('show');
+            }
+            
+            // Validate age
+            const age = document.getElementById('age');
+            if (!age.value || age.value < 0 || age.value > 30) {
+                age.classList.add('error');
+                age.nextElementSibling.classList.add('show');
+                isValid = false;
+            } else {
+                age.classList.remove('error');
+                age.nextElementSibling.classList.remove('show');
+            }
+            
+            // Validate condition
+            const condition = document.getElementById('condition');
+            if (!condition.value) {
+                condition.nextElementSibling.classList.add('show');
+                isValid = false;
+            } else {
+                condition.nextElementSibling.classList.remove('show');
+            }
+            
+            return isValid;
+        }
+
+        // Calculate final credit amount
+        function calculateFinalCredit() {
+            const { min, max } = calculateCreditRange(formData.brand, formData.size);
+            const age = parseInt(formData.age);
+            const condition = formData.condition;
+            
+            // Age factor (newer = higher credit)
+            let ageFactor = 1.0;
+            if (age <= 2) ageFactor = 1.0;
+            else if (age <= 5) ageFactor = 0.8;
+            else if (age <= 8) ageFactor = 0.6;
+            else if (age <= 10) ageFactor = 0.4;
+            else ageFactor = 0.2;
+            
+            // Condition factor
+            const conditionFactors = {
+                'excellent': 1.0,
+                'good': 0.75,
+                'fair': 0.5,
+                'poor': 0.25
+            };
+            
+            const conditionFactor = conditionFactors[condition] || 0.5;
+            
+            // Calculate final credit
+            const baseCredit = (min + max) / 2;
+            const finalCredit = Math.round(baseCredit * ageFactor * conditionFactor);
+            
+            // Ensure minimum credit of $80
+            return Math.max(finalCredit, 80);
+        }
+
+        // Generate unique code with TRFU prefix
+        function generateCode() {
+            // Generate a 6-digit number based on timestamp
+            const timestamp = Date.now().toString();
+            const random = Math.floor(Math.random() * 900) + 100;
+            const lastDigits = timestamp.slice(-2);
+            const code = `TRFU${random}${lastDigits}`;
+            return code;
+        }
+
+        // Copy code to clipboard
+        function copyCode() {
+            const code = document.getElementById('resultCode').textContent;
+            navigator.clipboard.writeText(code).then(() => {
+                showMessage('Code copied to clipboard!', 'success');
+            }).catch(() => {
+                // Fallback for older browsers
+                const textArea = document.createElement("textarea");
+                textArea.value = code;
+                textArea.style.position = "fixed";
+                textArea.style.left = "-999999px";
+                document.body.appendChild(textArea);
+                textArea.focus();
+                textArea.select();
+                try {
+                    document.execCommand('copy');
+                    showMessage('Code copied to clipboard!', 'success');
+                } catch (err) {
+                    showMessage('Failed to copy code', 'error');
+                }
+                document.body.removeChild(textArea);
+            });
+        }
+
+        // Show message
+        function showMessage(text, type) {
+            const message = document.getElementById(type + 'Message');
+            message.querySelector('.message-text').textContent = text;
+            message.style.display = 'block';
+            
+            setTimeout(() => {
+                message.style.display = 'none';
+            }, 3000);
+        }
+
+        // Mobile menu toggle
+        document.getElementById('mobileMenuBtn').addEventListener('click', function() {
+            console.log('Mobile menu clicked');
+        });
+
+        // Add input formatting for phone number
+        document.getElementById('phone').addEventListener('input', function(e) {
+            let value = e.target.value.replace(/\D/g, '');
+            if (value.length >= 6) {
+                value = `(${value.slice(0, 3)}) ${value.slice(3, 6)}-${value.slice(6, 10)}`;
+            } else if (value.length >= 3) {
+                value = `(${value.slice(0, 3)}) ${value.slice(3)}`;
+            }
+            e.target.value = value;
+        });
+
+        // Add change listeners for live updates
+        document.getElementById('brand').addEventListener('change', updateCreditDisplay);
+        document.getElementById('size').addEventListener('change', updateCreditDisplay);
+
+
+
+        // Initialize when page loads
+        window.addEventListener('load', function() {
+            console.log('Page loaded');
+        });
+    </script>
+
+</body>

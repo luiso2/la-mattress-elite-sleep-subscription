@@ -223,7 +223,7 @@ export class ShopifyService {
     
     // Guardar en base de datos
     try {
-      const { OrphanedRuleLog } = await import('../database/models');
+      const { OrphanedRuleLog } = await import('../database/server-only');
       
       await OrphanedRuleLog.create({
         priceRuleId: priceRuleId.toString(),

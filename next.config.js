@@ -14,12 +14,9 @@ const nextConfig = {
   typescript: {
     ignoreBuildErrors: true,
   },
-  // Disable caching completely
+  // Experimental features
   experimental: {
-    staleTimes: {
-      dynamic: 0,
-      static: 0,
-    },
+    // Add experimental features here if needed
   },
   // Webpack configuration
   webpack: (config, { isServer }) => {

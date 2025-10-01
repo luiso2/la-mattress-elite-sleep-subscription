@@ -1,4 +1,4 @@
-import { OrphanedRuleLog } from '../database/models';
+import { OrphanedRuleLog } from '../database/server-only';
 import { Op } from 'sequelize';
 
 export class OrphanedRuleLogService {

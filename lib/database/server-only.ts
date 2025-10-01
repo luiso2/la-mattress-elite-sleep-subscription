@@ -1,5 +1,18 @@
-// This file should only be imported in server-side code (API routes, server components)
 import 'server-only';
+import { 
+  Customer, 
+  Coupon, 
+  CouponUse, 
+  User, 
+  SuperAdmin, 
+  Employee, 
+  OrphanedRuleLog,
+  updateExpiredCoupons,
+  findCouponsByEmail,
+  findCouponByCode,
+  createCouponWithCustomer
+} from './models';
+import { getSequelize, testConnection, syncDatabase } from './connection';
 
 export {
   Customer,
@@ -8,10 +21,12 @@ export {
   User,
   SuperAdmin,
   Employee,
+  OrphanedRuleLog,
   updateExpiredCoupons,
   findCouponsByEmail,
   findCouponByCode,
-  createCouponWithCustomer
-} from './models';
-
-export { getSequelize, testConnection, syncDatabase } from './connection';
+  createCouponWithCustomer,
+  getSequelize,
+  testConnection,
+  syncDatabase
+};
