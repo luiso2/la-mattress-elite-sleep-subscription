@@ -1,51 +1,5 @@
 import axios, { AxiosInstance } from 'axios';
 
-// Rate limiter utility
-class RateLimiter {
-  private queue: Array<() => Promise<any>> = [];
-  private processing = false;
-  private lastRequestTime = 0;
-  private minInterval = 550; // 550ms between requests = ~1.8 requests/second (safe margin for 2/second limit)
-
-  async execute<T>(fn: () => Promise<T>): Promise<T> {
-    return new Promise((resolve, reject) => {
-      this.queue.push(async () => {
-        try {
-          const now = Date.now();
-          const timeSinceLastRequest = now - this.lastRequestTime;
-          
-          if (timeSinceLastRequest < this.minInterval) {
-            await new Promise(r => setTimeout(r, this.minInterval - timeSinceLastRequest));
-          }
-          
-          this.lastRequestTime = Date.now();
-          const result = await fn();
-          resolve(result);
-        } catch (error) {
-          reject(error);
-        }
-      });
-      
-      this.processQueue();
-    });
-  }
-
-  private async processQueue() {
-    if (this.processing || this.queue.length === 0) return;
-    
-    this.processing = true;
-    
-    while (this.queue.length > 0) {
-      const task = this.queue.shift();
-      if (task) {
-        await task();
-      }
-    }
-    
-    this.processing = false;
-  }
-}
-
 interface ShopifyConfig {
   storeUrl: string;
   accessToken: string;
@@ -82,14 +36,9 @@ interface DiscountCode {
 export class ShopifyService {
   private client: AxiosInstance;
   private config: ShopifyConfig;
-  private rateLimiter = new RateLimiter();
   // Map para prevenir creación de cupones duplicados
   private creatingCoupons = new Map<string, boolean>();
   private couponCreationPromises = new Map<string, Promise<any>>();
-  // Cache for price rules and discount codes
-  private priceRulesCache: { data: PriceRule[]; timestamp: number } | null = null;
-  private discountCodesCache = new Map<number, { data: DiscountCode[]; timestamp: number }>();
-  private cacheTimeout = 60000; // 1 minute cache
 
   constructor() {
     this.config = {
@@ -110,17 +59,10 @@ export class ShopifyService {
     });
   }
 
-  // Wrapper for all Shopify API calls with rate limiting
-  private async makeShopifyRequest<T>(requestFn: () => Promise<T>): Promise<T> {
-    return this.rateLimiter.execute(requestFn);
-  }
-
   // Test connection to Shopify
   async testConnection(): Promise<boolean> {
     try {
-      const response = await this.makeShopifyRequest(() => 
-        this.client.get('/shop.json')
-      );
+      const response = await this.client.get('/shop.json');
       console.log('✅ Shopify connection successful:', response.data.shop.name);
       return true;
     } catch (error) {
@@ -162,13 +104,7 @@ export class ShopifyService {
         }
       };
 
-      const response = await this.makeShopifyRequest(() =>
-        this.client.post('/price_rules.json', priceRuleData)
-      );
-      
-      // Clear cache after creating
-      this.priceRulesCache = null;
-      
+      const response = await this.client.post('/price_rules.json', priceRuleData);
       console.log(`✅ Price rule created with ID: ${response.data.price_rule.id}`);
       return response.data.price_rule;
     } catch (error: any) {
@@ -205,20 +141,25 @@ export class ShopifyService {
           }
         };
 
-        const response = await this.makeShopifyRequest(() =>
-          this.client.post(
-            `/price_rules/${priceRuleId}/discount_codes.json`,
-            discountCodeData
-          )
+        const response = await this.client.post(
+          `/price_rules/${priceRuleId}/discount_codes.json`,
+          discountCodeData
         );
-        
-        // Clear cache for this price rule
-        this.discountCodesCache.delete(priceRuleId);
         
         const createdCode = response.data.discount_code;
         console.log(`✅ Discount code created successfully: ${code} (ID: ${createdCode.id})`);
         
-        return createdCode;
+        // Post-creation validation
+        await new Promise(resolve => setTimeout(resolve, 500)); // Small delay for API consistency
+        const validation = await this.validateDiscountCodeCreation(priceRuleId, code);
+        
+        if (validation.success) {
+          console.log(`✅ Discount code validation passed: ${code}`);
+          return createdCode;
+        } else {
+          console.warn(`⚠️ Discount code created but validation failed: ${code}`);
+          return createdCode; // Return anyway, validation might be overly strict
+        }
         
       } catch (error: any) {
         lastError = error;
@@ -252,57 +193,75 @@ export class ShopifyService {
     return null;
   }
 
-  // Get all price rules with caching
+  // Validate that a discount code was properly created
+  private async validateDiscountCodeCreation(priceRuleId: number, code: string): Promise<{ success: boolean; message?: string }> {
+    try {
+      const codes = await this.getDiscountCodes(priceRuleId);
+      const found = codes.find(dc => dc.code === code);
+      
+      if (found) {
+        return { success: true };
+      } else {
+        return { success: false, message: `Discount code ${code} not found in price rule ${priceRuleId}` };
+      }
+    } catch (error: any) {
+      return { success: false, message: `Validation error: ${error.message}` };
+    }
+  }
+
+  // Log orphaned rule for monitoring and alerting
+  private async logOrphanedRule(priceRuleId: number, code: string, error: any): Promise<void> {
+    const logEntry = {
+      timestamp: new Date().toISOString(),
+      priceRuleId,
+      code,
+      error: error?.response?.data || error?.message || 'Unknown error',
+      type: 'ORPHANED_RULE_CREATED'
+    };
+    
+    console.error('🚨 ORPHANED RULE ALERT:', JSON.stringify(logEntry, null, 2));
+    
+    // Guardar en base de datos
+    try {
+      const { OrphanedRuleLog } = await import('../database/server-only');
+      
+      await OrphanedRuleLog.create({
+        priceRuleId: priceRuleId.toString(),
+        couponCode: code,
+        errorMessage: error?.message || 'Unknown error',
+        errorDetails: error?.response?.data || error,
+        shopifyResponse: error?.response?.data,
+        attemptCount: 1,
+        resolved: false
+      });
+      
+      console.log(`📝 Orphaned rule log saved to database: ${code}`);
+    } catch (dbError: any) {
+      console.error('❌ Failed to save orphaned rule log to database:', dbError.message);
+    }
+    
+    // In a production environment, you might want to:
+    // - Send this to a monitoring service
+    // - Write to a dedicated log file
+    // - Trigger an alert/notification
+  }
+
+  // Get all price rules
   async getPriceRules(): Promise<PriceRule[]> {
     try {
-      // Check cache first
-      if (this.priceRulesCache && (Date.now() - this.priceRulesCache.timestamp < this.cacheTimeout)) {
-        console.log('📦 Using cached price rules');
-        return this.priceRulesCache.data;
-      }
-      
-      const response = await this.makeShopifyRequest(() =>
-        this.client.get('/price_rules.json?limit=250')
-      );
-      
-      const priceRules = response.data.price_rules || [];
-      
-      // Update cache
-      this.priceRulesCache = {
-        data: priceRules,
-        timestamp: Date.now()
-      };
-      
-      return priceRules;
+      const response = await this.client.get('/price_rules.json?limit=250');
+      return response.data.price_rules || [];
     } catch (error: any) {
       console.error('Error fetching price rules:', error.response?.data || error.message);
       return [];
     }
   }
 
-  // Get discount codes for a price rule with caching
+  // Get discount codes for a price rule
   async getDiscountCodes(priceRuleId: number): Promise<DiscountCode[]> {
     try {
-      // Check cache first
-      const cached = this.discountCodesCache.get(priceRuleId);
-      if (cached && (Date.now() - cached.timestamp < this.cacheTimeout)) {
-        console.log(`📦 Using cached discount codes for rule ${priceRuleId}`);
-        return cached.data;
-      }
-      
-      const response = await this.makeShopifyRequest(() =>
-        this.client.get(`/price_rules/${priceRuleId}/discount_codes.json?limit=250`)
-      );
-      
-      const discountCodes = response.data.discount_codes || [];
-      
-      // Update cache
-      this.discountCodesCache.set(priceRuleId, {
-        data: discountCodes,
-        timestamp: Date.now()
-      });
-      
-      return discountCodes;
+      const response = await this.client.get(`/price_rules/${priceRuleId}/discount_codes.json?limit=250`);
+      return response.data.discount_codes || [];
     } catch (error: any) {
       console.error('Error fetching discount codes:', error.response?.data || error.message);
       return [];
@@ -312,14 +271,7 @@ export class ShopifyService {
   // Delete a price rule (and its discount codes)
   async deletePriceRule(priceRuleId: number): Promise<boolean> {
     try {
-      await this.makeShopifyRequest(() =>
-        this.client.delete(`/price_rules/${priceRuleId}.json`)
-      );
-      
-      // Clear cache
-      this.priceRulesCache = null;
-      this.discountCodesCache.delete(priceRuleId);
-      
+      await this.client.delete(`/price_rules/${priceRuleId}.json`);
       console.log(`✅ Price rule ${priceRuleId} deleted successfully`);
       return true;
     } catch (error: any) {
@@ -331,13 +283,7 @@ export class ShopifyService {
   // Delete a specific discount code
   async deleteDiscountCode(priceRuleId: number, discountCodeId: number): Promise<boolean> {
     try {
-      await this.makeShopifyRequest(() =>
-        this.client.delete(`/price_rules/${priceRuleId}/discount_codes/${discountCodeId}.json`)
-      );
-      
-      // Clear cache for this price rule
-      this.discountCodesCache.delete(priceRuleId);
-      
+      await this.client.delete(`/price_rules/${priceRuleId}/discount_codes/${discountCodeId}.json`);
       console.log(`✅ Discount code ${discountCodeId} deleted successfully`);
       return true;
     } catch (error: any) {
@@ -349,9 +295,7 @@ export class ShopifyService {
   // Get a single price rule
   async getPriceRule(priceRuleId: number): Promise<PriceRule | null> {
     try {
-      const response = await this.makeShopifyRequest(() =>
-        this.client.get(`/price_rules/${priceRuleId}.json`)
-      );
+      const response = await this.client.get(`/price_rules/${priceRuleId}.json`);
       return response.data.price_rule;
     } catch (error: any) {
       console.error('Error fetching price rule:', error.response?.data || error.message);
@@ -362,15 +306,9 @@ export class ShopifyService {
   // Update a price rule
   async updatePriceRule(priceRuleId: number, updates: Partial<PriceRule>): Promise<PriceRule | null> {
     try {
-      const response = await this.makeShopifyRequest(() =>
-        this.client.put(`/price_rules/${priceRuleId}.json`, {
-          price_rule: updates
-        })
-      );
-      
-      // Clear cache
-      this.priceRulesCache = null;
-      
+      const response = await this.client.put(`/price_rules/${priceRuleId}.json`, {
+        price_rule: updates
+      });
       return response.data.price_rule;
     } catch (error: any) {
       console.error('Error updating price rule:', error.response?.data || error.message);
@@ -471,7 +409,7 @@ export class ShopifyService {
     return { priceRule, discountCode };
   }
 
-  // Validate if a coupon code exists (optimized with sequential search)
+  // Validate if a coupon code exists (mejorado para búsqueda más eficiente)
   async validateCouponCode(code: string): Promise<{
     valid: boolean;
     priceRule?: PriceRule;
@@ -485,24 +423,31 @@ export class ShopifyService {
       const priceRules = await this.getPriceRules();
       console.log(`Found ${priceRules.length} price rules to check`);
 
-      // Search sequentially instead of parallel to avoid rate limiting
-      for (const priceRule of priceRules) {
+      // Search for the discount code in each price rule
+      // Usar búsqueda en paralelo para mejorar performance
+      const searchPromises = priceRules.map(async (priceRule) => {
         const discountCodes = await this.getDiscountCodes(priceRule.id);
         const discountCode = discountCodes.find(dc => dc.code === code);
         
         if (discountCode) {
-          const duration = Date.now() - startTime;
-          console.log(`✅ Found coupon in ${duration}ms`);
           return {
             valid: true,
             priceRule,
             discountCode
           };
         }
-      }
+        return null;
+      });
+      
+      const results = await Promise.all(searchPromises);
+      const found = results.find(r => r !== null);
       
       const duration = Date.now() - startTime;
-      console.log(`Validation completed in ${duration}ms - coupon not found`);
+      console.log(`Validation completed in ${duration}ms`);
+      
+      if (found) {
+        return found;
+      }
 
       return { valid: false };
     } catch (error) {
@@ -522,11 +467,9 @@ export class ShopifyService {
       
       // Intentar usar el API de búsqueda de Shopify si está disponible
       // Esto es más eficiente que iterar sobre todas las price rules
-      const response = await this.makeShopifyRequest(() =>
-        this.client.get('/discount_codes/lookup.json', {
-          params: { code: code }
-        }).catch(() => null)
-      );
+      const response = await this.client.get('/discount_codes/lookup.json', {
+        params: { code: code }
+      }).catch(() => null);
       
       if (response && response.data.discount_code) {
         const discountCode = response.data.discount_code;
@@ -544,38 +487,6 @@ export class ShopifyService {
       console.error('Error in direct validation:', error);
       // Fallback al método tradicional
       return this.validateCouponCode(code);
-    }
-  }
-  
-  // Log orphaned rule for monitoring and alerting
-  private async logOrphanedRule(priceRuleId: number, code: string, error: any): Promise<void> {
-    const logEntry = {
-      timestamp: new Date().toISOString(),
-      priceRuleId,
-      code,
-      error: error?.response?.data || error?.message || 'Unknown error',
-      type: 'ORPHANED_RULE_CREATED'
-    };
-    
-    console.error('🚨 ORPHANED RULE ALERT:', JSON.stringify(logEntry, null, 2));
-    
-    // Guardar en base de datos si es posible
-    try {
-      const { OrphanedRuleLog } = await import('../database/server-only');
-      
-      await OrphanedRuleLog.create({
-        priceRuleId: priceRuleId.toString(),
-        couponCode: code,
-        errorMessage: error?.message || 'Unknown error',
-        errorDetails: error?.response?.data || error,
-        shopifyResponse: error?.response?.data,
-        attemptCount: 1,
-        resolved: false
-      });
-      
-      console.log(`📝 Orphaned rule log saved to database: ${code}`);
-    } catch (dbError: any) {
-      console.error('❌ Failed to save orphaned rule log to database:', dbError.message);
     }
   }
 }
